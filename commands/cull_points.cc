@@ -106,7 +106,7 @@ vector<vec2> cull_points(PointCloud pc, Image img) {
             ++nremoved;
         }
     }
-    fmt::print("Removed {} pts.\n", nremoved);
+    fmt::print("Removed {} points.\n", nremoved);
     return result;
 }
 

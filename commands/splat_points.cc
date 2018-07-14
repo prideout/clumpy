@@ -13,9 +13,9 @@ using std::vector;
 using std::string;
 using std::numeric_limits;
 
-namespace {
+void splat_points(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstimg);
 
-void draw_pts(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstimg);
+namespace {
 
 enum KernelType { DISTANCE, GAUSSIAN, CIRCLE };
 
@@ -86,14 +86,16 @@ bool SplatPoints::exec(vector<string> vargs) {
 
     vector<uint8_t> dstimg;
     dstimg.resize(width * height);
-    draw_pts(ptlist, npts, u32vec2(width, height), dstimg.data());
+    fmt::print("Drawing {} points.\n", npts);
+    splat_points(ptlist, npts, u32vec2(width, height), dstimg.data());
     cnpy::npy_save(output_file, dstimg.data(), {height, width}, "w");
 
     return true;
 }
 
-void draw_pts(vec2 const* ptlist, uint32_t npts, u32vec2 size, uint8_t* dstimg) {
-    fmt::print("Drawing {} pts.\n", npts);
+} // anonymous namespace
+
+void splat_points(vec2 const* ptlist, uint32_t npts, u32vec2 size, uint8_t* dstimg) {
     for (uint32_t i = 0; i < npts; ++i) {
         uint32_t x = ptlist[i].x;
         uint32_t y = ptlist[i].y;
@@ -102,5 +104,3 @@ void draw_pts(vec2 const* ptlist, uint32_t npts, u32vec2 size, uint8_t* dstimg) 
         }
     }
 }
-
-} // anonymous namespace

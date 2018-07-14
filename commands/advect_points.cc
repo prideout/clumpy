@@ -10,14 +10,20 @@ using namespace glm;
 using std::vector;
 using std::string;
 
+void splat_points(vec2 const* ptlist, uint32_t npts, u32vec2 size, uint8_t* dstimg);
+
 namespace {
 
 struct Image {
     uint32_t height;
     uint32_t width;
     vec2 const* pixels;
-    vec2 operator()(uint32_t x, uint32_t y) const {
+    vec2 texel_fetch(uint32_t x, uint32_t y) const {
         return (x >= width || y >= height) ? vec2(0) : pixels[x + width * y];
+    }
+    // TODO: bilinear interpolation with 3 mixes and 4 fetches. Might want to test it separately.
+    vec2 sample(vec2 coord) {
+        return texel_fetch(coord.x, coord.y);
     }
 };
 
@@ -56,7 +62,7 @@ bool AdvectPoints::exec(vector<string> vargs) {
     const string velocities_img = vargs[1];
     const float step_size = atof(vargs[2].c_str());
     const uint32_t nframes = atoi(vargs[3].c_str());
-    const string suffix_img = vargs[4];
+    const string suffix = vargs[4];
 
     cnpy::NpyArray arr = cnpy::npy_load(input_pts);
     if (arr.shape.size() != 2 || arr.shape[1] != 2) {
@@ -87,15 +93,38 @@ bool AdvectPoints::exec(vector<string> vargs) {
         .pixels = img.data<vec2>()
     };
 
+    auto show_progress = [](uint32_t i, uint32_t count) {
+        int progress = 100 * i / (count - 1);
+        fmt::print("[");
+        for (int c = 0; c < 100; ++c) putc(c < progress ? '=' : '-', stdout);
+        fmt::print("]\r");
+        fflush(stdout);
+    };
+
+    vector<uint8_t> dstimg;
+    u32vec2 dims(vel.width, vel.height);
+    dstimg.resize(vel.width * vel.height);
     for (uint32_t frame = 0; frame < nframes; ++frame) {
+        // show_progress(frame, nframes);
         advect_points(pc, vel, step_size);
+        memset(dstimg.data(), 0, dstimg.size());
+        splat_points(pc.coords, pc.count, dims, dstimg.data());
+        string filename = fmt::format("{:03}{}", frame, suffix);
+        cnpy::npy_save(filename, dstimg.data(), {dims.y, dims.x}, "w");
     }
 
+    fmt::print("\nGenerated {:03}{} through {:03}{}.\n", 0, suffix, nframes - 1, suffix);
     return true;
 }
 
 void advect_points(PointCloud pc, Image velocities, float step_size) {
-
+    for (uint32_t i = 0; i < pc.count; ++i) {
+        vec2& pt = pc.coords[i];
+        pt += step_size * velocities.sample(pt);
+        if (i == 0) {
+            fmt::print("{}, {}\n", pt.x, pt.y);
+        }
+    }
 }
 
 } // anonymous namespace

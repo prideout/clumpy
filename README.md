@@ -56,7 +56,7 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes.
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example3.png">
 
 Create a nice distribution of ~20k points, cull points that overlap certain areas, and plot them. Do
-all this in less than a second, using only one thread.
+all this in less than a second and using only one thread.
 
     clumpy bridson_points 500x250 2 0 coords.npy
     clumpy cull_points coords.npy shapes.npy culled.npy

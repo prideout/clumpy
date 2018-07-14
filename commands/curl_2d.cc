@@ -49,7 +49,7 @@ bool Curl2d::exec(vector<string> vargs) {
     float const* psrc = arr.data<float>();
     vector<float> result(width * height * 2);
     float* pdstx = result.data();
-    float* pdsty = result.data() + width * height;
+    float* pdsty = result.data() + 1;
 
     float minval = numeric_limits<float>::max();
     float maxval = numeric_limits<float>::lowest();
@@ -60,19 +60,19 @@ bool Curl2d::exec(vector<string> vargs) {
             int nextrow = (row < height - 1) ? (row + 1) : row;
             float p = psrc[col + row * width];
             float dpdx = psrc[nextcol + row * width] - p;
-            float dpdy = psrc[col + nextrow * width] - p;
-            *pdstx++ = dpdy;
-            *pdsty++ = -dpdx;
-            minval = std::min(minval, *(pdstx - 1));
-            maxval = std::max(maxval, *(pdstx - 1));
-            minval = std::min(minval, *(pdsty - 1));
-            maxval = std::max(maxval, *(pdsty - 1));
+            float dpdy = p - psrc[col + nextrow * width];
+            minval = min(minval, min(dpdx, dpdx));
+            maxval = max(maxval, max(dpdx, dpdy));
+            *pdstx = dpdy;
+            *pdsty = dpdx;
+            pdstx += 2;
+            pdsty += 2;
         }
     }
 
     fmt::print("Curl range is {} to {}\n", minval, maxval);
-    fmt::print("Curl shape is 2x{}x{}\n", width, height);
-    cnpy::npy_save(output_file, result.data(), {2, height, width}, "w");
+    fmt::print("Curl shape is {}x{}x2\n", width, height);
+    cnpy::npy_save(output_file, result.data(), {height, width, 2}, "w");
     return true;
 }
 
