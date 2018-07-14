@@ -19,6 +19,7 @@ include_directories(extern extern/glm .)
 link_libraries(fmt cnpy)
 
 set(CMDS
+  commands/advect_points.cc
   commands/bridson_points.cc
   commands/cull_points.cc
   commands/curl_2d.cc

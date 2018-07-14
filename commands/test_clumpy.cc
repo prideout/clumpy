@@ -90,6 +90,7 @@ bool Test::exec(vector<string> args) {
         }
     };
 
+    auto advect_points = get_command("advect_points");
     auto bridson_points = get_command("bridson_points");
     auto cull_points = get_command("cull_points");
     auto curl_2d = get_command("curl_2d");
@@ -119,6 +120,7 @@ bool Test::exec(vector<string> args) {
         spawn_python(kTestPoints);
     }
 
+    delete advect_points;
     delete bridson_points;
     delete cull_points;
     delete curl_2d;

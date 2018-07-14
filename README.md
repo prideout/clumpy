@@ -68,41 +68,33 @@ Create a nice point distribution, cull points that overlap certain areas, then p
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example4.png">
 
-<!-- TODO items
+<!--
 
-beeline to simple movie (no streamlines, no wide points, but YES to a seamless loop)
-    clumpy cull_points <input_pts> <sdf_file> <output_pts>
-    clumpy advect_points <input_pts> <velocities_img> <time_step> <nframes> <output_img_suffix>
+TODO
 
-Import a bitmap, generate a distance field from it, add noise, and export:
+"Import a bitmap, generate a distance field from it, add noise, and export."
 
-    python3 <<EOL
-    from PIL import Image;
-    Image.load('foo.png').toarray().save('foo.npy')
-    EOL
+flesh out splat_points
 
-    flesh out splat_points
+clumpy generate_svg <input_file> <output_file>
 
-    clumpy generate_svg <input_file> <output_file>
+angles_to_vectors <input_file> <output_file>
+    https://docs.scipy.org/doc/numpy/reference/routines.math.html
 
-    angles_to_vectors <input_file> <output_file>
-        https://docs.scipy.org/doc/numpy/reference/routines.math.html
+variable_blur
+    https://github.com/scipy/scipy/blob/master/scipy/ndimage/filters.py#L213
 
-    variable_blur
-        https://github.com/scipy/scipy/blob/master/scipy/ndimage/filters.py#L213
+gradient_magnitude (similar to curl2d)
+    https://docs.scipy.org/doc/numpy/reference/routines.math.html
 
-    gradient_magnitude (similar to curl2d)
-        https://docs.scipy.org/doc/numpy/reference/routines.math.html
+repro heman stuff
+    note that even a color gradient could be achieved; search for  "color lookup" here:
+        https://docs.scipy.org/doc/numpy-1.12.0/user/basics.indexing.html
+    look at pillow example here (although it should have h=1, then resize)
+        https://stackoverflow.com/questions/25668828/how-to-create-colour-gradient-in-python
 
-    repro heman stuff
-        note that even a color gradient could be achieved; search for  "color lookup" here:
-            https://docs.scipy.org/doc/numpy-1.12.0/user/basics.indexing.html
-        look at pillow example here (although it should have h=1, then resize)
-            https://stackoverflow.com/questions/25668828/how-to-create-colour-gradient-in-python
-
-    https://github.com/prideout/reba-island
-    https://blind.guru/simple_cxx11_workqueue.html
-    https://matplotlib.org/gallery/images_contours_and_fields/quiver_demo.html#sphx-glr-gallery-images-contours-and-fields-quiver-demo-py
-
+https://github.com/prideout/reba-island
+https://blind.guru/simple_cxx11_workqueue.html
+https://matplotlib.org/gallery/images_contours_and_fields/quiver_demo.html#sphx-glr-gallery-images-contours-and-fields-quiver-demo-py
     
 -->

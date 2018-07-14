@@ -50,4 +50,4 @@ def generate_plot():
     ax.set_aspect(0.5)
     plt.savefig('matplotlib.png', dpi=1000)
 
-generate_plot()
+# generate_plot()
