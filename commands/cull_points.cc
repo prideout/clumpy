@@ -78,8 +78,8 @@ bool CullPoints::exec(vector<string> vargs) {
         fmt::print("Input data has wrong shape.\n");
         return false;
     }
-    if (img.word_size != sizeof(float)) {
-        fmt::print("Input data has wrong word size.\n");
+    if (img.word_size != sizeof(float) || img.type_code != 'f') {
+        fmt::print("Input data has wrong data type.\n");
         return false;
     }
     Image sdf {
