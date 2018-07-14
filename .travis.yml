@@ -1,0 +1,11 @@
+language: c
+compiler: clang
+
+os:
+  - linux
+  - osx
+
+script:
+  - cmake -H. -B.release && cmake --build .release
+  - alias clumpy=$PWD/.release/clumpy
+  - clumpy test
