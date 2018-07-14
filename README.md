@@ -57,6 +57,8 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes:
 
 travis
 
+Look at type_code in cnpy
+
 Create a nice point distribution, cull points that overlap certain areas, then plot them:
 Look at type_code in cnpy
 

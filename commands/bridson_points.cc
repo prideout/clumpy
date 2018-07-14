@@ -2,6 +2,8 @@
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
+#include <limits>
+
 #include <glm/vec2.hpp>
 #include <glm/ext.hpp>
 

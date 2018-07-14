@@ -2,7 +2,11 @@
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
+#include <limits>
+
 using namespace std;
+
+namespace {
 
 struct Curl2d : ClumpyCommand {
     Curl2d() {}
@@ -70,4 +74,6 @@ bool Curl2d::exec(vector<string> vargs) {
     fmt::print("Curl shape is 2x{}x{}\n", width, height);
     cnpy::npy_save(output_file, result.data(), {2, height, width}, "w");
     return true;
+}
+
 }

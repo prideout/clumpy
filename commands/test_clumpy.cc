@@ -79,12 +79,12 @@ bool Test::exec(vector<string> args) {
         return iter->second();
     };
 
-    auto generate_simplex = get_command("generate_simplex");
+    auto bridson_points = get_command("bridson_points");
     auto curl_2d = get_command("curl_2d");
     auto generate_dshapes = get_command("generate_dshapes");
-    auto visualize_sdf = get_command("visualize_sdf");
-    auto bridson_points = get_command("bridson_points");
+    auto generate_simplex = get_command("generate_simplex");
     auto splat_points = get_command("splat_points");
+    auto visualize_sdf = get_command("visualize_sdf");
 
     if (false) {
         generate_simplex->exec({ "500x250", "1.0", "16.0", "78", "noise.npy" });
@@ -105,12 +105,12 @@ bool Test::exec(vector<string> args) {
         spawn_python(kTestPoints);
     }
 
-    delete generate_simplex;
+    delete bridson_points;
     delete curl_2d;
     delete generate_dshapes;
-    delete visualize_sdf;
-    delete bridson_points;
+    delete generate_simplex;
     delete splat_points;
+    delete visualize_sdf;
 
     return true;
 }

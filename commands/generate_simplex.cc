@@ -2,6 +2,8 @@
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
+#include <limits>
+
 using namespace std;
 
 struct GenerateSimplex : ClumpyCommand {

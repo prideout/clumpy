@@ -5,6 +5,8 @@
 #include <glm/vec2.hpp>
 #include <glm/ext.hpp>
 
+#include <limits>
+
 using namespace glm;
 
 using std::vector;
