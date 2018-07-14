@@ -73,6 +73,12 @@ all this in less than a second and using only one thread.
 
 TODO
 
+advect_points should create a seamless loop
+
+splat_points should blend, apply alpha, and assert if kernel_size != 1
+
+advect_points should draw streamlines
+
 "Import a bitmap, generate a distance field from it, add noise, and export."
 
 flesh out splat_points

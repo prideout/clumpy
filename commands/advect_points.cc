@@ -105,7 +105,7 @@ bool AdvectPoints::exec(vector<string> vargs) {
     u32vec2 dims(vel.width, vel.height);
     dstimg.resize(vel.width * vel.height);
     for (uint32_t frame = 0; frame < nframes; ++frame) {
-        // show_progress(frame, nframes);
+        show_progress(frame, nframes);
         advect_points(pc, vel, step_size);
         memset(dstimg.data(), 0, dstimg.size());
         splat_points(pc.coords, pc.count, dims, dstimg.data());
@@ -121,9 +121,6 @@ void advect_points(PointCloud pc, Image velocities, float step_size) {
     for (uint32_t i = 0; i < pc.count; ++i) {
         vec2& pt = pc.coords[i];
         pt += step_size * velocities.sample(pt);
-        if (i == 0) {
-            fmt::print("{}, {}\n", pt.x, pt.y);
-        }
     }
 }
 
