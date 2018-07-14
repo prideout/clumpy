@@ -19,13 +19,13 @@ include_directories(extern extern/glm)
 
 set(SOURCE
   bridson_points.cc
-  clumpy.hh
-  clumpy.cc
+  clumpy_command.hh
   curl_2d.cc
   generate_dshapes.cc
   generate_simplex.cc
+  main_clumpy.cc
   splat_points.cc
-  test.cc
+  test_clumpy.cc
   visualize_sdf.cc)
 
 link_libraries(fmt cnpy)

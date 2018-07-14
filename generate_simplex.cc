@@ -1,4 +1,4 @@
-#include "clumpy.hh"
+#include "clumpy_command.hh"
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
@@ -11,7 +11,7 @@ struct GenerateSimplex : ClumpyCommand {
         return "generate simplex noise in [-1,+1]";
     }
     string usage() const override {
-        return "<dims> <amplitude> <frequency> <seed> <output_file>";
+        return "<dims> <amplitude> <frequency> <seed> <output_img>";
     }
     string example() const override {
         return "400x200 1.0 16.0 26 out.npy";

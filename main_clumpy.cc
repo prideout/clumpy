@@ -1,4 +1,4 @@
-#include "clumpy.hh"
+#include "clumpy_command.hh"
 #include "fmt/core.h"
 
 #include <string>
@@ -7,10 +7,7 @@ using namespace std;
 
 constexpr auto kDescription = R"(
 Welcome to clumpy. This tool can process or generate large swaths of image
-data. It is meant to be used in conjunction with numpy or scikit-image.
-
-Image data is generally serialized as fp32 in [-1,+1] although fp64 may be
-used internally for some operations.
+data. It is meant to be used in conjunction with Python.
 )";
 
 void help() {

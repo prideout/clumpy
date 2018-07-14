@@ -1,4 +1,4 @@
-#include "clumpy.hh"
+#include "clumpy_command.hh"
 #include "cnpy/cnpy.h"
 #include "fmt/core.h"
 
@@ -115,6 +115,6 @@ bool Test::exec(vector<string> args) {
     return true;
 }
 
-static ClumpyCommand::Register registrar("test", [] {
+static ClumpyCommand::Register registrar("test_clumpy", [] {
     return new Test();
 });

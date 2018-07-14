@@ -1,4 +1,4 @@
-#include "clumpy.hh"
+#include "clumpy_command.hh"
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
@@ -11,7 +11,7 @@ struct Curl2d : ClumpyCommand {
         return "apply the curl operator to a field of scalars";
     }
     string usage() const override {
-        return "<input_file> <output_file>";
+        return "<input_img> <output_img>";
     }
     string example() const override {
         return "in.npy out.npy";

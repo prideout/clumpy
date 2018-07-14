@@ -1,4 +1,4 @@
-#include "clumpy.hh"
+#include "clumpy_command.hh"
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
@@ -20,7 +20,7 @@ struct GenerateShapes : ClumpyCommand {
         return "generate signed distance field of random shapes";
     }
     string usage() const override {
-        return "<dim> <nshapes> <seed> <output_file>";
+        return "<dim> <nshapes> <seed> <output_img>";
     }
     string example() const override {
         return "400x200 4 26 out.npy";

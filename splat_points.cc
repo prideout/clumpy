@@ -1,4 +1,4 @@
-#include "clumpy.hh"
+#include "clumpy_command.hh"
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
@@ -43,7 +43,7 @@ bool SplatPoints::exec(vector<string> vargs) {
     const string dims = vargs[1];
     const string kernel_typestring = vargs[2];
     const int kernel_size = atoi(vargs[3].c_str());
-    const float alpha = atof(vargs[4].c_str());
+    //const float alpha = atof(vargs[4].c_str());
     const string output_file = vargs[5].c_str();
     const uint32_t width = atoi(dims.c_str());
     const uint32_t height = atoi(dims.substr(dims.find('x') + 1).c_str());
@@ -94,7 +94,7 @@ void draw_pts(vec2 const* ptlist, uint32_t npts, u32vec2 size, uint8_t* dstimg) 
     for (uint32_t i = 0; i < npts; ++i) {
         uint32_t x = ptlist[i].x;
         uint32_t y = ptlist[i].y;
-        if (x >= 0 && y >= 0 && x < size.x && y < size.y) {
+        if (x < size.x && y < size.y) {
             dstimg[size.x * y + x] = 255;
         }
     }

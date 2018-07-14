@@ -1,4 +1,4 @@
-#include "clumpy.hh"
+#include "clumpy_command.hh"
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
@@ -22,7 +22,7 @@ struct BridsonPoints : ClumpyCommand {
         return "generate list of 2D points";
     }
     string usage() const override {
-        return "<dim> <minradius> <seed> <output_file>";
+        return "<dim> <minradius> <seed> <output_pts>";
     }
     string example() const override {
         return "500x250 10 987 bridson.npy";

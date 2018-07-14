@@ -1,4 +1,4 @@
-#include "clumpy.hh"
+#include "clumpy_command.hh"
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
 
@@ -16,7 +16,7 @@ struct VisualizeSdf : ClumpyCommand {
         return "replace non-positive values with color";
     }
     string usage() const override {
-        return "<input_file> <output_file>";
+        return "<input_img> <output_img>";
     }
     string example() const override {
         return "in.npy out.npy";
