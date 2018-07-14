@@ -70,15 +70,6 @@ Create a nice point distribution, cull points that overlap certain areas, then p
 
 <!-- TODO items
 
-travis
-
-Look at type_code in cnpy
-
-Create a nice point distribution, cull points that overlap certain areas, then plot them:
-Look at type_code in cnpy
-
-test_clumpy should have an exec lambda: checks return codes and splits strings.
-
 beeline to simple movie (no streamlines, no wide points, but YES to a seamless loop)
     clumpy cull_points <input_pts> <sdf_file> <output_pts>
     clumpy advect_points <input_pts> <velocities_img> <time_step> <nframes> <output_img_suffix>

@@ -78,6 +78,18 @@ bool Test::exec(vector<string> args) {
         return iter->second();
     };
 
+    auto exec = [](auto cmd, string args) {
+        stringstream ss(args);
+        istream_iterator<string> begin(ss);
+        istream_iterator<string> end;
+        vector<string> vstrings(begin, end);
+        bool success = cmd->exec(vstrings);
+        if (!success) {
+            fmt::print_colored(fmt::color::red, "Failure: {}\n", args);
+            exit(1);
+        }
+    };
+
     auto bridson_points = get_command("bridson_points");
     auto cull_points = get_command("cull_points");
     auto curl_2d = get_command("curl_2d");
@@ -87,23 +99,23 @@ bool Test::exec(vector<string> args) {
     auto visualize_sdf = get_command("visualize_sdf");
 
     if (false) {
-        generate_simplex->exec({ "500x250", "1.0", "16.0", "78", "noise.npy" });
+        exec(generate_simplex, "500x250 1.0 16.0 78 noise.npy");
         spawn_python(kTestSimplex);
-        curl_2d->exec({ "noise.npy", "curl.npy" });
+        exec(curl_2d, "noise.npy curl.npy");
         spawn_python(kTestCurl);
     }
 
     if (false) {
-        generate_dshapes->exec({ "500x250", "6", "47", "shapes.npy" });
-        visualize_sdf->exec({ "shapes.npy", "vizshapes.npy" });
+        exec(generate_dshapes, "500x250 6 47 shapes.npy");
+        exec(visualize_sdf, "shapes.npy vizshapes.npy");
         spawn_python(kTestShapes);
     }
 
     if (false) {
-        bridson_points->exec({ "500x250", "4", "987", "coords.npy" });
-        generate_dshapes->exec({ "500x250", "1", "0", "shapes.npy" });
-        cull_points->exec({ "coords.npy", "shapes.npy", "culled.npy" });
-        splat_points->exec({ "culled.npy", "500x250", "gaussian", "5", "1.0", "splats.npy" });
+        exec(bridson_points, "500x250 4 987 coords.npy");
+        exec(generate_dshapes, "500x250 1 0 shapes.npy");
+        exec(cull_points, "coords.npy shapes.npy culled.npy");
+        exec(splat_points, "culled.npy 500x250 gaussian 5 1.0 splats.npy");
         spawn_python(kTestPoints);
     }
 
