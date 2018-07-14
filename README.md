@@ -15,12 +15,12 @@ Build and run clumpy:
     alias clumpy=$PWD/.release/clumpy
     clumpy help
 
-Generate two octaves of simplex noise and combine them:
+Generate two octaves of simplex noise and combine them.
 
     clumpy generate_simplex 500x250 0.5 16.0 0 noise1.npy
     clumpy generate_simplex 500x250 1.0 8.0  0 noise2.npy
 
-    python3 <<EOL
+    python <<EOL
     import numpy as np; from PIL import Image
     noise1, noise2 = np.load("noise1.npy"), np.load("noise2.npy")
     result = np.clip(np.abs(noise1 + noise2), 0, 1)
@@ -29,24 +29,24 @@ Generate two octaves of simplex noise and combine them:
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example1.png">
 
-Create a distance field with a random shape:
+Create a distance field with a random shape.
 
     clumpy generate_dshapes 500x250 1 0 shapes.npy
     clumpy visualize_sdf shapes.npy shapeviz.npy
 
-    python3 <<EOL
+    python <<EOL
     import numpy as np; from PIL import Image
     Image.fromarray(np.load('shapeviz.npy'), 'RGB').show()
     EOL
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example2.png">
 
-Create a 2x2 atlas of distance fields, each with 5 random shapes:
+Create a 2x2 atlas of distance fields, each with 5 random shapes.
 
     for i in {1..4}; do clumpy generate_dshapes 250x125 5 $i shapes$i.npy; done
     for i in {1..4}; do clumpy visualize_sdf shapes$i.npy shapes$i.npy; done
     
-    python3 <<EOL
+    python <<EOL
     import numpy as np; from PIL import Image
     a, b, c, d = (np.load('shapes{}.npy'.format(i)) for i in [1,2,3,4])
     img = np.vstack(((np.hstack((a,b)), np.hstack((c,d)))))
@@ -55,13 +55,14 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes:
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example3.png">
 
-Create a nice point distribution, cull points that overlap certain areas, then plot them:
+Create a nice distribution of ~20k points, cull points that overlap certain areas, and plot them. Do
+all this in less than a second, using only one thread.
 
-    clumpy bridson_points 500x250 4 987 coords.npy
+    clumpy bridson_points 500x250 2 0 coords.npy
     clumpy cull_points coords.npy shapes.npy culled.npy
     clumpy splat_points culled.npy 500x250 gaussian 5 1.0 splats.npy
 
-    python3 <<EOL
+    python <<EOL
     import numpy as np; from PIL import Image
     Image.fromarray(np.load("splats.npy"), "L").show()
     EOL
