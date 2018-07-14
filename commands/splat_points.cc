@@ -77,8 +77,8 @@ bool SplatPoints::exec(vector<string> vargs) {
         fmt::print("Input points must be 2D.\n");
         return false;
     }
-    if (arr.word_size != sizeof(float)) {
-        fmt::print("Input data has wrong word size.\n");
+    if (arr.word_size != sizeof(float) || arr.type_code != 'f') {
+        fmt::print("Input data has wrong data type.\n");
         return false;
     }
     uint32_t npts = arr.shape[0];
