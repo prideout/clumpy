@@ -20,6 +20,7 @@ link_libraries(fmt cnpy)
 
 set(CMDS
   commands/bridson_points.cc
+  commands/cull_points.cc
   commands/curl_2d.cc
   commands/generate_dshapes.cc
   commands/generate_simplex.cc

@@ -55,6 +55,19 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes:
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example3.png">
 
+Create a nice point distribution, cull points that overlap certain areas, then plot them:
+
+    clumpy bridson_points 500x250 4 987 coords.npy
+    clumpy cull_points coords.npy shapes.npy culled.npy
+    clumpy splat_points culled.npy 500x250 gaussian 5 1.0 splats.npy
+
+    python3 <<EOL
+    import numpy as np; from PIL import Image
+    Image.fromarray(np.load("splats.npy"), "L").show()
+    EOL
+
+<img src="https://github.com/prideout/clumpy/raw/master/extras/example4.png">
+
 <!-- TODO items
 
 travis

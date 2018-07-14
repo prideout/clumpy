@@ -79,6 +79,7 @@ bool Test::exec(vector<string> args) {
     };
 
     auto bridson_points = get_command("bridson_points");
+    auto cull_points = get_command("cull_points");
     auto curl_2d = get_command("curl_2d");
     auto generate_dshapes = get_command("generate_dshapes");
     auto generate_simplex = get_command("generate_simplex");
@@ -100,11 +101,14 @@ bool Test::exec(vector<string> args) {
 
     if (false) {
         bridson_points->exec({ "500x250", "4", "987", "coords.npy" });
-        splat_points->exec({ "coords.npy", "500x250", "gaussian", "5", "1.0", "splats.npy" });
+        generate_dshapes->exec({ "500x250", "1", "0", "shapes.npy" });
+        cull_points->exec({ "coords.npy", "shapes.npy", "culled.npy" });
+        splat_points->exec({ "culled.npy", "500x250", "gaussian", "5", "1.0", "splats.npy" });
         spawn_python(kTestPoints);
     }
 
     delete bridson_points;
+    delete cull_points;
     delete curl_2d;
     delete generate_dshapes;
     delete generate_simplex;
