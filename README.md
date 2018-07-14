@@ -58,6 +58,9 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes:
 travis
 
 Create a nice point distribution, cull points that overlap certain areas, then plot them:
+Look at type_code in cnpy
+
+test_clumpy should have an exec lambda: checks return codes and splits strings.
 
 beeline to simple movie (no streamlines, no wide points, but YES to a seamless loop)
     clumpy cull_points <input_pts> <sdf_file> <output_pts>
