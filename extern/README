@@ -1,0 +1,19 @@
+12 July 2018
+
+curl -L -O https://github.com/rogersce/cnpy/archive/master.zip
+unzip master.zip ; mv cnpy-master cnpy
+
+curl -L -O https://github.com/fmtlib/fmt/archive/master.zip
+unzip master.zip ; mv fmt-master fmt
+
+curl -L -O https://github.com/BlockoS/blob/archive/master.zip
+unzip master.zip ; mv blob-master blob
+
+curl -L -O https://github.com/adishavit/simple-svg/archive/master.zip
+unzip master.zip ; mv simple-svg-master svg
+
+13 July 2018
+
+curl -L -O https://github.com/g-truc/glm/archive/master.zip
+unzip master.zip ; mv glm-master glm
+rm -rf glm/test glm/doc
