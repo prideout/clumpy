@@ -15,19 +15,19 @@ add_subdirectory(extern/svg)
 
 set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
 
-include_directories(extern extern/glm)
-
-set(SOURCE
-  bridson_points.cc
-  clumpy_command.hh
-  curl_2d.cc
-  generate_dshapes.cc
-  generate_simplex.cc
-  main_clumpy.cc
-  splat_points.cc
-  test_clumpy.cc
-  visualize_sdf.cc)
-
+include_directories(extern extern/glm .)
 link_libraries(fmt cnpy)
 
-add_executable(clumpy ${SOURCE})
+set(CMDS
+  commands/bridson_points.cc
+  commands/curl_2d.cc
+  commands/generate_dshapes.cc
+  commands/generate_simplex.cc
+  commands/splat_points.cc
+  commands/test_clumpy.cc
+  commands/visualize_sdf.cc)
+
+add_executable(clumpy
+  ${CMDS}
+  clumpy_command.hh
+  main_clumpy.cc)
