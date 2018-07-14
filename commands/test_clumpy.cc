@@ -29,7 +29,6 @@ Image.fromarray(np.load("shapes.npy"), "RGB").show()
 
 constexpr auto kTestPoints = R"(
 import numpy as np
-from skimage import img_as_ubyte
 from PIL import Image
 
 splats = np.load("splats.npy")
@@ -99,7 +98,7 @@ bool Test::exec(vector<string> args) {
         spawn_python(kTestShapes);
     }
 
-    if (true) {
+    if (false) {
         bridson_points->exec({ "500x250", "4", "987", "coords.npy" });
         splat_points->exec({ "coords.npy", "500x250", "gaussian", "5", "1.0", "splats.npy" });
         spawn_python(kTestPoints);

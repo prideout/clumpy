@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/prideout/clumpy.svg?branch=master)](https://travis-ci.org/prideout/clumpy)
+
 This tool can manipulate or generate large swaths of image data stored in [numpy
 files](https://docs.scipy.org/doc/numpy/neps/npy-format.html). It's a sandbox for implementing
 operations in C++ that are either slow or non-existent in [pillow](https://python-pillow.org/),
