@@ -37,19 +37,20 @@ static ClumpyCommand::Register registrar("splat_points", [] {
 
 bool SplatPoints::exec(vector<string> vargs) {
     if (vargs.size() != 6) {
+        fmt::print("The command takes 6 arguments.\n");
         return false;
     }
-    const string pts_file = vargs[0].c_str();
+    const string pts_file = vargs[0];
     const string dims = vargs[1];
     const string kernel_typestring = vargs[2];
     const int kernel_size = atoi(vargs[3].c_str());
     //const float alpha = atof(vargs[4].c_str());
-    const string output_file = vargs[5].c_str();
+    const string output_file = vargs[5];
     const uint32_t width = atoi(dims.c_str());
     const uint32_t height = atoi(dims.substr(dims.find('x') + 1).c_str());
 
     if (0 == (kernel_size % 2)) {
-        fmt::print("Kernel size must be an odd integer.");
+        fmt::print("Kernel size must be an odd integer.\n");
         return false;
     }
 
@@ -61,7 +62,7 @@ bool SplatPoints::exec(vector<string> vargs) {
     } else if (kernel_typestring == "circle") {
         kernel_type = CIRCLE;
     } else {
-        fmt::print("Kernel type must be distance/gaussian/circle.");
+        fmt::print("Kernel type must be distance/gaussian/circle.\n");
         return false;
     }
 

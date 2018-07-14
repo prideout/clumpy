@@ -40,6 +40,7 @@ double open_simplex_noise4(
 
 bool GenerateSimplex::exec(vector<string> vargs) {
     if (vargs.size() != 5) {
+        fmt::print("The command takes 5 arguments.\n");
         return false;
     }
     string dims = vargs[0];

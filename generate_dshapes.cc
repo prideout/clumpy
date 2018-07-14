@@ -13,6 +13,8 @@ using std::vector;
 using std::string;
 using std::numeric_limits;
 
+namespace {
+
 struct GenerateShapes : ClumpyCommand {
     GenerateShapes() {}
     bool exec(vector<string> args) override;
@@ -37,6 +39,7 @@ static ClumpyCommand::Register registrar("generate_dshapes", [] {
 
 bool GenerateShapes::exec(vector<string> vargs) {
     if (vargs.size() != 4) {
+        fmt::print("This command takes 4 arguments.\n");
         return false;
     }
     string dims = vargs[0];
@@ -82,30 +85,8 @@ bool GenerateShapes::exec(vector<string> vargs) {
 // "2d signed distance functions" inspired by Maarten's shadertoy:
 //     https://www.shadertoy.com/view/4dfXDn
 
-float smoothMerge(float d1, float d2, float k) {
-    float h = clamp(0.5f + 0.5f*(d2 - d1)/k, 0.0f, 1.0f);
-    return mix(d2, d1, h) - k * h * (1.0-h);
-}
-
 float merge(float d1, float d2) {
     return min(d1, d2);
-}
-
-float mergeExclude(float d1, float d2) {
-    return min(max(-d1, d2), max(-d2, d1));
-}
-
-float substract(float d1, float d2) {
-    return max(-d1, d2);
-}
-
-float intersect(float d1, float d2) {
-    return max(d1, d2);
-}
-
-vec2 rotateCCW(vec2 p, float a) {
-    mat2 m = mat2(cos(a), sin(a), -sin(a), cos(a));
-    return p * m;	
 }
 
 vec2 rotateCW(vec2 p, float a) {
@@ -187,3 +168,5 @@ float GenerateShapes::shade(double u, double v, double w, double h) {
     }
     return d;
 }
+
+} // anonymous namespace

@@ -29,7 +29,7 @@ static ClumpyCommand::Register registrar("visualize_sdf", [] {
 
 bool VisualizeSdf::exec(vector<string> vargs) {
     if (vargs.size() != 2) {
-        fmt::print("Wrong number of arguments.\n");
+        fmt::print("This command takes 2 arguments.\n");
         return false;
     }
     const string input_file = vargs[0];

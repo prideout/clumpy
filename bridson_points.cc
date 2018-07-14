@@ -35,6 +35,7 @@ static ClumpyCommand::Register registrar("bridson_points", [] {
 
 bool BridsonPoints::exec(vector<string> vargs) {
     if (vargs.size() != 4) {
+        fmt::print("This command takes 4 arguments.\n");
         return false;
     }
     string dims = vargs[0];

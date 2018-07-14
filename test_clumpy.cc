@@ -100,7 +100,7 @@ bool Test::exec(vector<string> args) {
     }
 
     if (true) {
-        bridson_points->exec({ "500x250", "10", "987", "coords.npy" });
+        bridson_points->exec({ "500x250", "4", "987", "coords.npy" });
         splat_points->exec({ "coords.npy", "500x250", "gaussian", "5", "1.0", "splats.npy" });
         spawn_python(kTestPoints);
     }
