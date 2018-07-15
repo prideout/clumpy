@@ -38,9 +38,22 @@ blu = img_as_ubyte(np.zeros(red.shape))
 bands = [Image.fromarray(c) for c in [red, grn, blu]]
 Image.merge('RGB', bands).save('redgrn.png')
 
-clumpy('bridson_points 1024x512 5 42 pts.npy')
-clumpy('cull_points pts.npy potential.npy pts.npy')
-clumpy('advect_points pts.npy velocity.npy 300.0 240 anim.npy')
+thickpts = False
+
+if thickpts:
+    clumpy('bridson_points 1024x512 5 42 pts.npy')
+    clumpy('cull_points pts.npy potential.npy pts.npy')
+    clumpy('advect_points pts.npy velocity.npy 300.0 240 anim.npy')
+else:
+    clumpy('bridson_points 1024x512 5 0 pts.npy')
+    clumpy('cull_points pts.npy potential.npy pts.npy')
+    clumpy('advect_points pts.npy velocity.npy ' +
+        '{step_size} {kernel_size} {decay} {nframes} anim.npy'.format(
+            step_size = 399,
+            kernel_size = 1,
+            decay = 0.9,
+            nframes = 240
+        ))
 
 import imageio
 writer = imageio.get_writer('anim.mp4', fps=60)

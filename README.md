@@ -68,10 +68,10 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes.
 Create a nice distribution of ~20k points, cull points that overlap certain areas, and plot them. Do
 all this in less than a second and use only one thread.
 
-    clumpy bridson_points 1000x500 4 0 coords.npy   
-    clumpy generate_dshapes 1000x500 1 0 shapes.npy
+    clumpy bridson_points 500x250 2 0 coords.npy
+    clumpy generate_dshapes 500x250 1 0 shapes.npy
     clumpy cull_points coords.npy shapes.npy culled.npy
-    clumpy splat_points culled.npy 1000x500 u8disk 5 1.0 splats.npy
+    clumpy splat_points culled.npy 500x250 u8disk 1 1.0 splats.npy
 
     python3 <<EOL
     import numpy as np; from PIL import Image
@@ -84,7 +84,12 @@ all this in less than a second and use only one thread.
 
 TODO
 
-advect_points should draw streamlines
+visualize_sdf should offer modes: "rgb" "rgba"
+
+add a single frame to the README
+    Generate 240 frames of an advection animation.
+
+try less noise to look more like the Lava demo
 
 continue blog article
     quiver:
@@ -100,6 +105,13 @@ heman color island but without lighting
         https://docs.scipy.org/doc/numpy-1.12.0/user/basics.indexing.html
     look at pillow example here (although it should have h=1, then resize)
         https://stackoverflow.com/questions/25668828/how-to-create-colour-gradient-in-python
+    clumpy('advect_points pts.npy velocity.npy ' +
+        '{step_size} {kernel_size} {decay} {nframes} anim.npy'.format(
+            step_size = 399,
+            kernel_size = 1,
+            decay = 0.9,
+            nframes = 240
+        ))
 
 grayscale island waves sequence
     could perhaps use multiprocessing

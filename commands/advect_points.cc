@@ -44,10 +44,11 @@ struct AdvectPoints : ClumpyCommand {
         return "create an animation by moving points according to a velocity field";
     }
     string usage() const override {
-        return "<input_pts> <velocities_img> <step_size> <nframes> <suffix_img>";
+        return "<input_pts> <velocities_img> <step_size> <kernel_size> <decay> <nframes> "
+                "<suffix_img>";
     }
     string example() const override {
-        return "coords.npy speeds.npy 1.0 240 anim.npy";
+        return "coords.npy speeds.npy 1.0 3 0.5 240 anim.npy";
     }
 };
 
@@ -56,16 +57,18 @@ static ClumpyCommand::Register registrar("advect_points", [] {
 });
 
 bool AdvectPoints::exec(vector<string> vargs) {
-    if (vargs.size() != 5) {
-        fmt::print("This command takes 5 arguments.\n");
+    if (vargs.size() != 7) {
+        fmt::print("This command takes 7 arguments.\n");
         return false;
     }
 
     const string input_pts = vargs[0];
     const string velocities_img = vargs[1];
     const float step_size = atof(vargs[2].c_str());
-    const uint32_t nframes = atoi(vargs[3].c_str());
-    const string suffix = vargs[4];
+    const int kernel_size = atoi(vargs[3].c_str());
+    const float decay = atof(vargs[4].c_str());
+    const uint32_t nframes = atoi(vargs[5].c_str());
+    const string suffix = vargs[6];
 
     cnpy::NpyArray arr = cnpy::npy_load(input_pts);
     if (arr.shape.size() != 2 || arr.shape[1] != 2) {
@@ -139,6 +142,11 @@ bool AdvectPoints::exec(vector<string> vargs) {
                     age_offset[i] = nframes;
                 }
             }
+            if (decay != 0) {
+                for (auto& v: dstimg) v *= decay;
+                const float alpha = 1.0f;
+                splat_disks(advected_points.data(), npts, dims, dstimg.data(), alpha, kernel_size);
+            }
             continue;
         }
 
@@ -154,8 +162,9 @@ bool AdvectPoints::exec(vector<string> vargs) {
         }
 
         // Render image and write to disk.
-        memset(dstimg.data(), 0, dstimg.size());
-        splat_disks(advected_points.data(), npts, dims, dstimg.data(), 0.8f, 5);
+        for (auto& v: dstimg) v *= decay;
+        const float alpha = 1.0f;
+        splat_disks(advected_points.data(), npts, dims, dstimg.data(), alpha, kernel_size);
         const string filename = fmt::format("{:03}{}", animframe++, suffix);
         cnpy::npy_save(filename, dstimg.data(), {dims.y, dims.x}, "w");
     }
