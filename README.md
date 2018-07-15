@@ -107,7 +107,7 @@ Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).show()
 <!--
 
 TODO
-
+    
 continue blog article
     quiver:
     https://matplotlib.org/gallery/images_contours_and_fields/quiver_demo.html#sphx-glr-gallery-images-contours-and-fields-quiver-demo-py
