@@ -5,6 +5,8 @@
 #include <glm/vec2.hpp>
 #include <glm/ext.hpp>
 
+#include <random>
+
 using namespace glm;
 
 using std::vector;
@@ -30,9 +32,8 @@ struct Image {
 struct PointCloud {
     uint32_t count;
     vec2* coords;
+    
 };
-
-void advect_points(PointCloud pc, Image velocities, float step_size);
 
 struct AdvectPoints : ClumpyCommand {
     AdvectPoints() {}
@@ -44,7 +45,7 @@ struct AdvectPoints : ClumpyCommand {
         return "<input_pts> <velocities_img> <step_size> <nframes> <suffix_img>";
     }
     string example() const override {
-        return "coords.npy speeds.npy 0.01 240 anim.npy";
+        return "coords.npy speeds.npy 1.0 240 anim.npy";
     }
 };
 
@@ -73,7 +74,7 @@ bool AdvectPoints::exec(vector<string> vargs) {
         fmt::print("Input points has wrong data type.\n");
         return false;
     }
-    PointCloud pc {
+    PointCloud original_points {
         .count = (uint32_t) arr.shape[0],
         .coords = arr.data<vec2>()
     };
@@ -87,7 +88,7 @@ bool AdvectPoints::exec(vector<string> vargs) {
         fmt::print("Velocities have wrong data type.\n");
         return false;
     }
-    Image vel {
+    Image velocities {
         .width = (uint32_t) img.shape[1],
         .height = (uint32_t) img.shape[0],
         .pixels = img.data<vec2>()
@@ -101,27 +102,65 @@ bool AdvectPoints::exec(vector<string> vargs) {
         fflush(stdout);
     };
 
-    vector<uint8_t> dstimg;
-    u32vec2 dims(vel.width, vel.height);
-    dstimg.resize(vel.width * vel.height);
-    for (uint32_t frame = 0; frame < nframes; ++frame) {
-        show_progress(frame, nframes);
-        advect_points(pc, vel, step_size);
-        memset(dstimg.data(), 0, dstimg.size());
-        splat_points(pc.coords, pc.count, dims, dstimg.data());
-        string filename = fmt::format("{:03}{}", frame, suffix);
-        cnpy::npy_save(filename, dstimg.data(), {dims.y, dims.x}, "w");
+    vector<uint8_t> dstimg(velocities.width * velocities.height);
+
+    const u32vec2 dims(velocities.width, velocities.height);
+
+    const uint32_t npts = original_points.count;
+    vector<float> particle_age(npts);
+    vector<vec2> advected_points(original_points.coords, original_points.coords + npts);
+
+    vector<uint32_t> age_offset(npts);
+    {
+        std::mt19937 generator;
+        generator.seed(0);
+        std::uniform_int_distribution<> get_age_offset(0, nframes - 1);
+        for (uint32_t i = 0; i < npts; ++i) {
+            age_offset[i] = get_age_offset(generator);
+        }
     }
 
-    fmt::print("\nGenerated {:03}{} through {:03}{}.\n", 0, suffix, nframes - 1, suffix);
+    uint32_t animframe = 0;
+    uint32_t simframe = 0;
+    for (; simframe < 2 * nframes; ++simframe) {
+        show_progress(simframe, 2 * nframes);
+
+        // Initial advection.
+        if (simframe < nframes) {
+
+            for (uint32_t i = 0; i < npts; ++i) {
+                vec2& pt = advected_points[i];
+                pt += step_size * velocities.sample(pt);
+                particle_age[i]++;
+                if (simframe >= age_offset[i]) {
+                    pt = original_points.coords[i];
+                    particle_age[i] = 0;
+                    age_offset[i] = nframes;
+                }
+            }
+
+        // Recorded
+        } else {
+
+            for (uint32_t i = 0; i < npts; ++i) {
+                vec2& pt = advected_points[i];
+                pt += step_size * velocities.sample(pt);
+                particle_age[i]++;
+                if (particle_age[i] >= nframes) {
+                    pt = original_points.coords[i];
+                    particle_age[i] = 0;
+                }
+            }
+
+            memset(dstimg.data(), 0, dstimg.size());
+            splat_points(advected_points.data(), npts, dims, dstimg.data());
+            const string filename = fmt::format("{:03}{}", animframe++, suffix);
+            cnpy::npy_save(filename, dstimg.data(), {dims.y, dims.x}, "w");
+        }
+    }
+
+    fmt::print("\nGenerated {:03}{} through {:03}{}.\n", 0, suffix, animframe - 1, suffix);
     return true;
-}
-
-void advect_points(PointCloud pc, Image velocities, float step_size) {
-    for (uint32_t i = 0; i < pc.count; ++i) {
-        vec2& pt = pc.coords[i];
-        pt += step_size * velocities.sample(pt);
-    }
 }
 
 } // anonymous namespace
