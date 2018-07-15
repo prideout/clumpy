@@ -33,7 +33,7 @@ from PIL import Image
 
 splats = np.load("splats.npy")
 print(splats.shape)
-Image.fromarray(splats, "L").show()
+Image.fromarray(255 - splats, "L").show()
 
 if False:
     pts = np.load("coords.npy")
@@ -112,11 +112,11 @@ bool Test::exec(vector<string> args) {
         spawn_python(kTestShapes);
     }
 
-    if (false) {
-        exec(bridson_points, "500x250 4 987 coords.npy");
+    if (true) {
+        exec(bridson_points, "500x250 15 987 coords.npy");
         exec(generate_dshapes, "500x250 1 0 shapes.npy");
         exec(cull_points, "coords.npy shapes.npy culled.npy");
-        exec(splat_points, "culled.npy 500x250 gaussian 5 1.0 splats.npy");
+        exec(splat_points, "culled.npy 500x250 u8disk 11 1.0 splats.npy");
         spawn_python(kTestPoints);
     }
 

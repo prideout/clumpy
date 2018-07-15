@@ -70,7 +70,7 @@ all this in less than a second and use only one thread.
 
     clumpy bridson_points 500x250 2 0 coords.npy
     clumpy cull_points coords.npy shapes.npy culled.npy
-    clumpy splat_points culled.npy 500x250 gaussian 5 1.0 splats.npy
+    clumpy splat_points culled.npy 500x250 u8disk 5 1.0 splats.npy
 
     python <<EOL
     import numpy as np; from PIL import Image
