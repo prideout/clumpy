@@ -116,22 +116,20 @@ void splat_points(vec2 const* ptlist, uint32_t npts, u32vec2 size, uint8_t* dsti
 void splat_disks(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstimg, float alpha,
         int kernel_size) {
 
-    // First, make the sprite.
+    // First, create an AA mask for the sprite.
     if (0 == (kernel_size % 2)) {
         fmt::print("Kernel size must be an odd integer.\n");
         exit(1);
     }
-    vector<uint8_t> sprite(kernel_size * kernel_size);
+    vector<float> sprite(kernel_size * kernel_size);
     const int middle = kernel_size / 2;
-    const int r2 = middle * middle;
+    const float r2 = middle * middle;
     for (int i = 0; i < kernel_size; i++) {
         for (int j = 0; j < kernel_size; j++) {
             int x = i - middle;
             int y = j - middle;
-            int d2 = x * x + y * y;
-            if (d2 < r2) {
-                sprite[i + j * kernel_size] = 255;
-            }
+            float d2 = x * x + y * y;
+            sprite[i + j * kernel_size] = alpha * smoothstep(r2 + 5.0f, r2 - 5.0f, d2);
         }
     }
 
@@ -142,12 +140,15 @@ void splat_disks(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstim
     for (uint32_t i = 0; i < npts; ++i) {
         int32_t x = (int32_t) ptlist[i].x;
         int32_t y = (int32_t) ptlist[i].y;
-        for (int32_t x0 = x - h; x0 <= x + h; ++x0) {
+        float const* spriteval = &sprite[0];
         for (int32_t y0 = y - h; y0 <= y + h; ++y0) {
+        for (int32_t x0 = x - h; x0 <= x + h; ++x0) {
             if (x0 >= 0 && y0 >= 0 && x0 < width && y0 < height) {
-                dstimg[width * y0 + x0] = (uint8_t) ((1.0f - alpha) * dstimg[width * y0 + x0] +
-                    alpha * 255.0f);
+                float alpha = *spriteval;
+                uint32_t dst = dstimg[width * y0 + x0];
+                dstimg[width * y0 + x0] = (uint8_t) ((1.0f - alpha) * dst + alpha * 255.0f);
             }
+            ++spriteval;
         }
         }
     }

@@ -112,11 +112,11 @@ bool Test::exec(vector<string> args) {
         spawn_python(kTestShapes);
     }
 
-    if (true) {
+    if (false) {
         exec(bridson_points, "500x250 15 987 coords.npy");
         exec(generate_dshapes, "500x250 1 0 shapes.npy");
         exec(cull_points, "coords.npy shapes.npy culled.npy");
-        exec(splat_points, "culled.npy 500x250 u8disk 11 1.0 splats.npy");
+        exec(splat_points, "culled.npy 500x250 u8disk 7 1.0 splats.npy");
         spawn_python(kTestPoints);
     }
 

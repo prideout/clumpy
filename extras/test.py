@@ -40,13 +40,13 @@ Image.merge('RGB', bands).save('redgrn.png')
 
 clumpy('bridson_points 1024x512 5 42 pts.npy')
 clumpy('cull_points pts.npy potential.npy pts.npy')
-clumpy('advect_points pts.npy velocity.npy 60.0 240 anim.npy')
+clumpy('advect_points pts.npy velocity.npy 300.0 240 anim.npy')
 
 import imageio
 writer = imageio.get_writer('anim.mp4', fps=60)
 for i in range(240):
     filename = "{:03}anim.npy".format(i)
-    frame_data = np.load(filename)
+    frame_data = 255 - np.load(filename)
     writer.append_data(frame_data)
 writer.close()
 print('Generated anim.mp4')

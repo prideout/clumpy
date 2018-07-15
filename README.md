@@ -68,11 +68,12 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes.
 Create a nice distribution of ~20k points, cull points that overlap certain areas, and plot them. Do
 all this in less than a second and use only one thread.
 
-    clumpy bridson_points 500x250 2 0 coords.npy
+    clumpy bridson_points 1000x500 4 0 coords.npy   
+    clumpy generate_dshapes 1000x500 1 0 shapes.npy
     clumpy cull_points coords.npy shapes.npy culled.npy
-    clumpy splat_points culled.npy 500x250 u8disk 5 1.0 splats.npy
+    clumpy splat_points culled.npy 1000x500 u8disk 5 1.0 splats.npy
 
-    python <<EOL
+    python3 <<EOL
     import numpy as np; from PIL import Image
     Image.fromarray(np.load("splats.npy"), "L").show()
     EOL
@@ -83,11 +84,10 @@ all this in less than a second and use only one thread.
 
 TODO
 
-splat_points should blend, apply alpha, and assert if kernel_size != 1
-
 advect_points should draw streamlines
 
 continue blog article
+    quiver:
     https://matplotlib.org/gallery/images_contours_and_fields/quiver_demo.html#sphx-glr-gallery-images-contours-and-fields-quiver-demo-py
 
 heman color island but without lighting

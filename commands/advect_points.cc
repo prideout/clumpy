@@ -13,6 +13,8 @@ using std::vector;
 using std::string;
 
 void splat_points(vec2 const* ptlist, uint32_t npts, u32vec2 size, uint8_t* dstimg);
+void splat_disks(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstimg, float alpha,
+        int kernel_size);
 
 namespace {
 
@@ -153,7 +155,7 @@ bool AdvectPoints::exec(vector<string> vargs) {
 
         // Render image and write to disk.
         memset(dstimg.data(), 0, dstimg.size());
-        splat_points(advected_points.data(), npts, dims, dstimg.data());
+        splat_disks(advected_points.data(), npts, dims, dstimg.data(), 0.8f, 5);
         const string filename = fmt::format("{:03}{}", animframe++, suffix);
         cnpy::npy_save(filename, dstimg.data(), {dims.y, dims.x}, "w");
     }
