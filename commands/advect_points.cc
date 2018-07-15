@@ -127,7 +127,6 @@ bool AdvectPoints::exec(vector<string> vargs) {
 
         // Initial advection.
         if (simframe < nframes) {
-
             for (uint32_t i = 0; i < npts; ++i) {
                 vec2& pt = advected_points[i];
                 pt += step_size * velocities.sample(pt);
@@ -138,25 +137,25 @@ bool AdvectPoints::exec(vector<string> vargs) {
                     age_offset[i] = nframes;
                 }
             }
-
-        // Recorded
-        } else {
-
-            for (uint32_t i = 0; i < npts; ++i) {
-                vec2& pt = advected_points[i];
-                pt += step_size * velocities.sample(pt);
-                particle_age[i]++;
-                if (particle_age[i] >= nframes) {
-                    pt = original_points.coords[i];
-                    particle_age[i] = 0;
-                }
-            }
-
-            memset(dstimg.data(), 0, dstimg.size());
-            splat_points(advected_points.data(), npts, dims, dstimg.data());
-            const string filename = fmt::format("{:03}{}", animframe++, suffix);
-            cnpy::npy_save(filename, dstimg.data(), {dims.y, dims.x}, "w");
+            continue;
         }
+
+        // Recorded advection.
+        for (uint32_t i = 0; i < npts; ++i) {
+            vec2& pt = advected_points[i];
+            pt += step_size * velocities.sample(pt);
+            particle_age[i]++;
+            if (particle_age[i] >= nframes) {
+                pt = original_points.coords[i];
+                particle_age[i] = 0;
+            }
+        }
+
+        // Render image and write to disk.
+        memset(dstimg.data(), 0, dstimg.size());
+        splat_points(advected_points.data(), npts, dims, dstimg.data());
+        const string filename = fmt::format("{:03}{}", animframe++, suffix);
+        cnpy::npy_save(filename, dstimg.data(), {dims.y, dims.x}, "w");
     }
 
     fmt::print("\nGenerated {:03}{} through {:03}{}.\n", 0, suffix, animframe - 1, suffix);

@@ -87,14 +87,27 @@ splat_points should blend, apply alpha, and assert if kernel_size != 1
 
 advect_points should draw streamlines
 
-"Import a bitmap, generate a distance field from it, add noise, and export."
-    This could be a Python-first example.
-    Or we could wait for something slow and do multiprocessing...
+continue blog article
+    https://matplotlib.org/gallery/images_contours_and_fields/quiver_demo.html#sphx-glr-gallery-images-contours-and-fields-quiver-demo-py
+
+heman color island but without lighting
+    shouldn't require any new functionality
+    could be a python-first example.
     # Should this function throw if system returns nonzero?
     def clumpy(cmd):
         os.system('./clumpy ' + cmd)
+    search for  "color lookup" here:
+        https://docs.scipy.org/doc/numpy-1.12.0/user/basics.indexing.html
+    look at pillow example here (although it should have h=1, then resize)
+        https://stackoverflow.com/questions/25668828/how-to-create-colour-gradient-in-python
 
-flesh out splat_points
+grayscale island waves sequence
+    could perhaps use multiprocessing
+    https://github.com/prideout/reba-island
+
+lighting / AO...  make the streamlines look like 3D tadpoles?
+
+"Import a bitmap, generate a distance field from it, add noise, and export."
 
 clumpy generate_svg <input_file> <output_file>
 
@@ -107,14 +120,6 @@ variable_blur
 gradient_magnitude (similar to curl2d)
     https://docs.scipy.org/doc/numpy/reference/routines.math.html
 
-repro heman stuff
-    note that even a color gradient could be achieved; search for  "color lookup" here:
-        https://docs.scipy.org/doc/numpy-1.12.0/user/basics.indexing.html
-    look at pillow example here (although it should have h=1, then resize)
-        https://stackoverflow.com/questions/25668828/how-to-create-colour-gradient-in-python
-
-https://github.com/prideout/reba-island
 https://blind.guru/simple_cxx11_workqueue.html
-https://matplotlib.org/gallery/images_contours_and_fields/quiver_demo.html#sphx-glr-gallery-images-contours-and-fields-quiver-demo-py
     
 -->
