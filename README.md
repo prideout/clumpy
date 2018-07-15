@@ -82,9 +82,11 @@ all this in less than a second and use only one thread.
 
 ---
 
-Generate 240 frames of an advection animation with ~12k points, then brighten up the last frame
-and display it. This entire script takes about 1 second to execute and it uses only one core
-(3.1 GHz Intel Core i7).
+You may wish to invoke clumpy from within Python using `os.system` or `subprocess.Popen `.
+
+Here's an example that generates 240 frames of an advection animation with ~12k points, then
+brighten up the last frame and display it. This entire script takes about 1 second to execute and
+uses only one core (3.1 GHz Intel Core i7).
 
 ```python
 from numpy import load
