@@ -76,8 +76,10 @@ bool VisualizeSdf::exec(vector<string> vargs) {
         }
     } else {
         u8vec4* dst = (u8vec4*) result.data();
-        const vec4 fill_color(0.2, 0.6, 0.8, 1.0);
-        const vec4 border_color(0.8, 0.6, 0.2, 1.0);
+        // const vec4 fill_color(0.2, 0.6, 0.8, 1.0);
+        // const vec4 border_color(0.8, 0.6, 0.2, 1.0);
+        const vec4 fill_color(0.6, 0.6, 0.6, 1.0);
+        const vec4 border_color(0.2, 0.2, 0.2, 1.0);
         for (uint32_t row = 0; row < height; ++row) {
             for (uint32_t col = 0; col < width; ++col, ++dst) {
                 float p = psrc[col + row * width];

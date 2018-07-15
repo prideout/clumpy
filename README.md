@@ -80,14 +80,33 @@ all this in less than a second and use only one thread.
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example4.png">
 
+---
+
+Generate 240 frames of an advection animation with ~12k points, then brighten up the last frame
+and display it it. This entire script takes about 1 second to execute and it uses only one core
+(3.1 GHz Intel Core i7).
+
+```python
+from numpy import load
+from PIL import Image
+from os import system
+
+def clumpy(cmd):
+    result = system('./clumpy ' + cmd)
+    if result: raise Exception("clumpy failed with: " + cmd)
+
+clumpy('generate_simplex 1000x500 1.0 8.0 0 potential.npy')
+clumpy('curl_2d potential.npy velocity.npy')
+clumpy('bridson_points 1000x500 5 0 pts.npy')
+clumpy('advect_points pts.npy velocity.npy 30 1 0.95 240 anim.npy')
+Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).show()
+```
+
+<img src="https://github.com/prideout/clumpy/raw/master/extras/example5.png">
+
 <!--
 
 TODO
-
-try less noise to look more like the Lava demo
-
-add a single frame to the README
-    Generate 240 frames of an advection animation.
 
 continue blog article
     quiver:
