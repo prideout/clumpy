@@ -30,5 +30,10 @@ advect_points(
     output_points='anim.npy')
 '''
 
-Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).save('example5.png')
+Image \
+    .fromarray(load("000anim.npy"), "L") \
+    .point(lambda p: p * 2) \
+    .resize((500, 250), Image.BILINEAR) \
+    .save('example5.png')
+
 system('optipng example5.png')
