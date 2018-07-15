@@ -9,11 +9,15 @@ Since it's just a command line tool, it doesn't contain any
 [FFI](https://en.wikipedia.org/wiki/Foreign_function_interface) messiness. Feel free to contribute
 by adding your own command, but keep it simple! Add a `cc` file and make a pull request.
 
-Build and run clumpy:
+---
+
+Build and run clumpy.
 
     cmake -H. -B.release -GNinja && cmake --build .release
     alias clumpy=$PWD/.release/clumpy
     clumpy help
+
+---
 
 Generate two octaves of simplex noise and combine them.
 
@@ -29,6 +33,8 @@ Generate two octaves of simplex noise and combine them.
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example1.png">
 
+---
+
 Create a distance field with a random shape.
 
     clumpy generate_dshapes 500x250 1 0 shapes.npy
@@ -40,6 +46,8 @@ Create a distance field with a random shape.
     EOL
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example2.png">
+
+---
 
 Create a 2x2 atlas of distance fields, each with 5 random shapes.
 
@@ -55,8 +63,10 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes.
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example3.png">
 
+---
+
 Create a nice distribution of ~20k points, cull points that overlap certain areas, and plot them. Do
-all this in less than a second and using only one thread.
+all this in less than a second and use only one thread.
 
     clumpy bridson_points 500x250 2 0 coords.npy
     clumpy cull_points coords.npy shapes.npy culled.npy
