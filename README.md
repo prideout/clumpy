@@ -73,7 +73,7 @@ all this in less than a second and use only one thread.
     clumpy cull_points coords.npy shapes.npy culled.npy
     clumpy splat_points culled.npy 500x250 u8disk 1 1.0 splats.npy
 
-    python3 <<EOL
+    python <<EOL
     import numpy as np; from PIL import Image
     Image.fromarray(np.load("splats.npy"), "L").show()
     EOL

@@ -106,7 +106,7 @@ bool Test::exec(vector<string> args) {
         spawn_python(kTestCurl);
     }
 
-    if (true) {
+    if (false) {
         exec(generate_dshapes, "500x250 6 47 shapes.npy");
         exec(visualize_sdf, "shapes.npy rgba vizshapes.npy");
         spawn_python(kTestShapes);
