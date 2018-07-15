@@ -24,9 +24,9 @@ shapes = np.clip(np.load('shapes.npy'), 0, 1)
 sdf = np.clip(abs(noise) * shapes, 0, 1)
 np.save('potential.npy', sdf)
 
-if False:
-    clumpy('visualize_sdf potential.npy viz.npy')
-    Image.fromarray(np.load('viz.npy'), 'RGB').show()
+clumpy('visualize_sdf potential.npy rgba viz.npy')
+overlay_img = Image.fromarray(np.load('viz.npy'), 'RGBA')
+overlay_img.save('overlay.png')
 
 clumpy('curl_2d potential.npy velocity.npy')
 velocity = np.load('velocity.npy').swapaxes(0, 2).swapaxes(1, 2)
@@ -43,7 +43,13 @@ thickpts = False
 if thickpts:
     clumpy('bridson_points 1024x512 5 42 pts.npy')
     clumpy('cull_points pts.npy potential.npy pts.npy')
-    clumpy('advect_points pts.npy velocity.npy 300.0 240 anim.npy')
+    clumpy('advect_points pts.npy velocity.npy ' +
+        '{step_size} {kernel_size} {decay} {nframes} anim.npy'.format(
+            step_size = 300,
+            kernel_size = 3,
+            decay = 0.9,
+            nframes = 240
+        ))
 else:
     clumpy('bridson_points 1024x512 5 0 pts.npy')
     clumpy('cull_points pts.npy potential.npy pts.npy')
@@ -57,9 +63,14 @@ else:
 
 import imageio
 writer = imageio.get_writer('anim.mp4', fps=60)
+opaque = Image.new('L', overlay_img.size, 255)
 for i in range(240):
     filename = "{:03}anim.npy".format(i)
     frame_data = 255 - np.load(filename)
+    base_img = Image.fromarray(frame_data, 'L')
+    base_img = Image.merge('RGBA', [base_img, base_img, base_img, opaque])
+    composited = Image.alpha_composite(base_img, overlay_img)
+    frame_data = np.array(composited)
     writer.append_data(frame_data)
 writer.close()
 print('Generated anim.mp4')

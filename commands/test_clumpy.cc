@@ -24,7 +24,7 @@ Image.fromarray(img_as_ubyte(arr)).show()
 constexpr auto kTestShapes = R"(
 import numpy as np
 from PIL import Image
-Image.fromarray(np.load("vizshapes.npy"), "RGB").show()
+Image.fromarray(np.load("vizshapes.npy"), "RGBA").show()
 )";
 
 constexpr auto kTestPoints = R"(
@@ -106,9 +106,9 @@ bool Test::exec(vector<string> args) {
         spawn_python(kTestCurl);
     }
 
-    if (false) {
+    if (true) {
         exec(generate_dshapes, "500x250 6 47 shapes.npy");
-        exec(visualize_sdf, "shapes.npy vizshapes.npy");
+        exec(visualize_sdf, "shapes.npy rgba vizshapes.npy");
         spawn_python(kTestShapes);
     }
 

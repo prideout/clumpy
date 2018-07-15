@@ -38,7 +38,7 @@ Generate two octaves of simplex noise and combine them.
 Create a distance field with a random shape.
 
     clumpy generate_dshapes 500x250 1 0 shapes.npy
-    clumpy visualize_sdf shapes.npy shapeviz.npy
+    clumpy visualize_sdf shapes.npy rgb shapeviz.npy
 
     python <<EOL
     import numpy as np; from PIL import Image
@@ -84,12 +84,10 @@ all this in less than a second and use only one thread.
 
 TODO
 
-visualize_sdf should offer modes: "rgb" "rgba"
+try less noise to look more like the Lava demo
 
 add a single frame to the README
     Generate 240 frames of an advection animation.
-
-try less noise to look more like the Lava demo
 
 continue blog article
     quiver:
