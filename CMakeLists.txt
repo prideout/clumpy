@@ -29,6 +29,13 @@ set(CMDS
   commands/test_clumpy.cc
   commands/visualize_sdf.cc)
 
+find_package(CGAL)
+
+if (CGAL_VERSION)
+  set(CMDS ${CMDS} commands/cgal_streamlines.cc)
+  link_libraries(cgal gmp)
+endif()
+
 add_executable(clumpy
   ${CMDS}
   clumpy_command.hh

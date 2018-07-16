@@ -109,7 +109,15 @@ Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).show()
 <!--
 
 TODO
-    
+
+cgal_streamlines command
+    Generate arrows on the CPU side via more points. Start with fat tubes.
+    https://github.com/adishavit/simple-svg
+    Break up streamlines according to a maxlength.
+    Do not bother animating!!
+
+clumpy generate_svg <input_file> <output_file>
+
 continue blog article
     quiver:
     https://matplotlib.org/gallery/images_contours_and_fields/quiver_demo.html#sphx-glr-gallery-images-contours-and-fields-quiver-demo-py
@@ -139,11 +147,6 @@ grayscale island waves sequence
 lighting / AO...  make the streamlines look like 3D tadpoles?
 
 "Import a bitmap, generate a distance field from it, add noise, and export."
-
-clumpy generate_svg <input_file> <output_file>
-
-angles_to_vectors <input_file> <output_file>
-    https://docs.scipy.org/doc/numpy/reference/routines.math.html
 
 variable_blur
     https://github.com/scipy/scipy/blob/master/scipy/ndimage/filters.py#L213
