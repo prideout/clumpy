@@ -6,6 +6,10 @@ from PIL import Image
 from os import system
 from tqdm import tqdm
 
+# import scipy.ndimage
+# smallvel = scipy.ndimage.zoom(np.load('velocity.npy'), 0.5, order=3)
+# np.save('smallvel.npy', smallvel)
+
 NOISE_SCALE = 0.7
 DISTANCE_SCALE = 0.5
 STEP_SIZE = 3000
@@ -40,7 +44,7 @@ noise = a + b
 a, b = np.amin(noise), np.amax(noise)
 viznoise = (noise - a) / (b - a)
 im = Image.fromarray(np.uint8(255 * viznoise), 'L')
-saveimg(im, 'noise.png')
+# saveimg(im, 'noise.png')
 
 # Generate angle-based vector field and visualize it with a red-green image.
 theta = viznoise * 2 * math.pi
@@ -49,7 +53,7 @@ blu = np.zeros(red.shape)
 bands = [np.uint8(255 * v) for v in (red, grn, blu)]
 bands = [Image.fromarray(c) for c in bands]
 im = Image.merge('RGB', bands)
-saveimg(im, 'angle_noise.png')
+# saveimg(im, 'angle_noise.png')
 
 # Generate distance field and overlay image.
 print('\nGENERATE DISTANCE FIELD')
@@ -60,8 +64,7 @@ overlayimg = Image.fromarray(np.load('overlay.npy'), 'RGBA')
 # Visualize distance field.
 clumpy('visualize_sdf shapes.npy rgb distancefield.npy')
 im = Image.fromarray(np.load('distancefield.npy'), 'RGB')
-saveimg(im, 'distancefield.png')
-
+# saveimg(im, 'distancefield.png')
 
 # Multiply noise with distance and take the curl.
 print('\nGENERATE VELOCITY')
@@ -69,6 +72,14 @@ shapes = np.load('shapes.npy')
 sdf = (NOISE_SCALE * noise + 1.0) * shapes * DISTANCE_SCALE
 np.save('potential.npy', sdf)
 clumpy('curl_2d potential.npy velocity.npy')
+
+# Use CGAL to render streamlines.
+print('\nRENDER STREAMLINES')
+clumpy('cgal_streamlines velocity.npy ?? ?? streamlines.npy')
+streamlines = np.load('streamlines.npy')
+im = Image.fromarray(255 - streamlines, 'L')
+saveimg(im, 'streamlines.png')
+quit()
 
 # Visualize the curl-based noise with a red-green image.
 vel = np.load('velocity.npy')

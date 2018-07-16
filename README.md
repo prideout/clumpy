@@ -111,10 +111,13 @@ Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).show()
 TODO
 
 cgal_streamlines command
+    hide streamlines inside the negative areas
+        maskedvel = vel * mask
+    use splat_disk
+    add proper arguments
+    contour conversion
+        https://github.com/adishavit/simple-svg
     Generate arrows on the CPU side via more points. Start with fat tubes.
-    https://github.com/adishavit/simple-svg
-    Break up streamlines according to a maxlength.
-    Do not bother animating!!
 
 clumpy generate_svg <input_file> <output_file>
 
