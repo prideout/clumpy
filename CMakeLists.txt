@@ -40,3 +40,4 @@ add_executable(clumpy
   ${CMDS}
   clumpy_command.hh
   main_clumpy.cc)
+  

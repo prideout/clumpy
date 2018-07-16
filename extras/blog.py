@@ -75,10 +75,13 @@ clumpy('curl_2d potential.npy velocity.npy')
 
 # Use CGAL to render streamlines.
 print('\nRENDER STREAMLINES')
-clumpy('cgal_streamlines velocity.npy ?? ?? streamlines.npy')
+clumpy('cgal_streamlines velocity.npy 5 1 streamlines.npy')
 streamlines = np.load('streamlines.npy')
 im = Image.fromarray(255 - streamlines, 'L')
-saveimg(im, 'streamlines.png')
+A = Image.new('L', im.size, 255)
+im = Image.merge('RGBA', [im, im, im, A])
+composited = Image.alpha_composite(im, overlayimg)
+saveimg(composited, 'streamlines.png')
 quit()
 
 # Visualize the curl-based noise with a red-green image.
@@ -106,12 +109,12 @@ clumpykw('advect_points pts.npy velocity.npy {step} {ptsize} {decay} {nframes} a
 print('\nENCODE VIDEO')
 import imageio
 writer = imageio.get_writer('anim.mp4', fps=60)
-opaque = Image.new('L', overlayimg.size, 255)
+A = Image.new('L', overlayimg.size, 255)
 for i in tqdm(range(240)):
     filename = "{:03}anim.npy".format(i)
     frame_data = 255 - np.load(filename)
     base_img = Image.fromarray(frame_data, 'L')
-    base_img = Image.merge('RGBA', [base_img, base_img, base_img, opaque])
+    base_img = Image.merge('RGBA', [base_img, base_img, base_img, A])
     composited = Image.alpha_composite(base_img, overlayimg)
     if i == 0:
         saveimg(composited, 'screencap.png')

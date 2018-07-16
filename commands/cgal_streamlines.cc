@@ -23,6 +23,9 @@ using namespace glm;
 using std::vector;
 using std::string;
 
+void splat_disks(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstimg, float alpha,
+        int kernel_size);
+
 namespace {
 
 struct CgalStreamlines : ClumpyCommand {
@@ -50,7 +53,11 @@ bool CgalStreamlines::exec(vector<string> vargs) {
     }
 
     const string velocities_img = vargs[0];
+    const int kernel_size = atoi(vargs[1].c_str());
+    const bool enable_arrows = atoi(vargs[2].c_str());
     const string output_img = vargs[3];
+    const double dSep = 25; // separating_distance
+    const double dRat = 2;  // saturation_ratio
 
     cnpy::NpyArray img = cnpy::npy_load(velocities_img);
     if (img.shape.size() != 3 || img.shape[2] != 2) {
@@ -83,8 +90,6 @@ bool CgalStreamlines::exec(vector<string> vargs) {
     }
 
     fmt::print("Generating streamlines...\n");
-    double dSep = 3.5 * 8;
-    double dRat = 1.6 * 1;
     Runge_kutta_integrator runge_kutta_integrator;
     Strl slines(field, runge_kutta_integrator, dSep, dRat);
     uint32_t nlines = 0;
@@ -100,20 +105,16 @@ bool CgalStreamlines::exec(vector<string> vargs) {
     fmt::print("Plotting points...\n");
     vector<uint8_t> dstimg(width * height);
     auto pixels = dstimg.data();
-    auto set_pixel = [width, height, pixels](uint32_t x, uint32_t y) {
-        if (x <  width && y < height) {
-            pixels[x + width * y] = 255;
-        }
-    };
+    vector<vec2> pts;
+    pts.reserve(npts);
     for (auto sit = slines.begin(); sit != slines.end(); sit++) {
         int i = 0;
-        for (Point_iterator pit = sit->first; pit != sit->second; pit++){
+        for (Point_iterator pit = sit->first; pit != sit->second; pit++) {
             Point_2 p = *pit;
-            for (int dx = -5 ; dx <= 5; ++dx)
-            for (int dy = -5 ; dy <= 5; ++dy)
-            set_pixel(p.x() + dx, p.y() + dy);
+            pts.emplace_back(vec2 {p.x(), p.y()});
         }
     }
+    splat_disks(pts.data(), npts, imagesize, dstimg.data(), 1.0f, kernel_size);
 
     cnpy::npy_save(output_img, dstimg.data(), {imagesize.y, imagesize.x}, "w");
     return true;
