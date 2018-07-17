@@ -110,14 +110,6 @@ Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).show()
 
 TODO
 
-cgal_streamlines command
-    Generate arrows on the CPU side via more points. Start with fat tubes.
-    streamlines_arrows
-
-continue blog article
-    quiver:
-    https://matplotlib.org/gallery/images_contours_and_fields/quiver_demo.html#sphx-glr-gallery-images-contours-and-fields-quiver-demo-py
-
 heman color island but without lighting
     shouldn't require any new functionality
     could be a python-first example.
