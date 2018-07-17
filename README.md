@@ -112,13 +112,7 @@ TODO
 
 cgal_streamlines command
     Generate arrows on the CPU side via more points. Start with fat tubes.
-
-find_contours <input_img> <output_svg>
-    https://github.com/adishavit/simple-svg
-    * int find_blobs( int16_t roi_x, int16_t roi_y, int16_t roi_w, int16_t roi_h,
-    *                 uint8_t *in, int16_t in_w, int16_t in_h, 
-    *                 label_t **label, int16_t *label_w, int16_t *label_h, 
-    *                 blob_t** blobs, int *count, int extract_internal );
+    streamlines_arrows
 
 continue blog article
     quiver:
@@ -147,6 +141,13 @@ grayscale island waves sequence
     https://github.com/prideout/reba-island
 
 lighting / AO...  make the streamlines look like 3D tadpoles?
+
+find_contours <input_img> <output_svg>
+    https://github.com/adishavit/simple-svg
+    * int find_blobs( int16_t roi_x, int16_t roi_y, int16_t roi_w, int16_t roi_h,
+    *                 uint8_t *in, int16_t in_w, int16_t in_h, 
+    *                 label_t **label, int16_t *label_w, int16_t *label_h, 
+    *                 blob_t** blobs, int *count, int extract_internal );
 
 "Import a bitmap, generate a distance field from it, add noise, and export."
 

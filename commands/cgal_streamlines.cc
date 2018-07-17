@@ -35,10 +35,11 @@ struct CgalStreamlines : ClumpyCommand {
         return "create a streamline diagram using CGAL";
     }
     string usage() const override {
-        return "<velocities_img> <??> <??> <output_img>";
+        return "<velocities_img> <line_width> <separating_distance> <saturation_ratio> "
+                "<arrow_type> <output_img>";
     }
     string example() const override {
-        return "speeds.npy ?? ?? streamlines.npy";
+        return "speeds.npy 5 25 2 0 streamlines.npy";
     }
 };
 
@@ -47,17 +48,17 @@ static ClumpyCommand::Register registrar("cgal_streamlines", [] {
 });
 
 bool CgalStreamlines::exec(vector<string> vargs) {
-    if (vargs.size() != 4) {
-        fmt::print("This command takes 4 arguments.\n");
+    if (vargs.size() != 6) {
+        fmt::print("This command takes 6 arguments.\n");
         return false;
     }
 
     const string velocities_img = vargs[0];
-    const int kernel_size = atoi(vargs[1].c_str());
-    const bool enable_arrows = atoi(vargs[2].c_str());
-    const string output_img = vargs[3];
-    const double dSep = 25; // separating_distance
-    const double dRat = 2;  // saturation_ratio
+    const int line_width = atoi(vargs[1].c_str());
+    const float separating_distance = atof(vargs[2].c_str());
+    const float saturation_ratio = atof(vargs[3].c_str());
+    const int arrow_type = atoi(vargs[4].c_str());
+    const string output_img = vargs[5];
 
     cnpy::NpyArray img = cnpy::npy_load(velocities_img);
     if (img.shape.size() != 3 || img.shape[2] != 2) {
@@ -72,7 +73,7 @@ bool CgalStreamlines::exec(vector<string> vargs) {
     const uint32_t height = (uint32_t) img.shape[0];
 
     const u32vec2 imagesize(width, height);
-    const u32vec2 gridsize = imagesize / u32vec2(4);
+    u32vec2 gridsize = imagesize / u32vec2(4);
 
     fmt::print("Populating CGAL field...\n");
     Field field(gridsize.x, gridsize.y, imagesize.x, imagesize.y);
@@ -82,16 +83,18 @@ bool CgalStreamlines::exec(vector<string> vargs) {
             float vx = *velocityData++;
             float vy = *velocityData++;
             field.set_field(i, j, Vector_2(vx, vy));
+            // Skip 3 columns.
             velocityData += 2;
             velocityData += 2;
             velocityData += 2;
         }
+        // Skip 3 rows.
         velocityData += 2 * imagesize.x * 3;
     }
 
     fmt::print("Generating streamlines...\n");
     Runge_kutta_integrator runge_kutta_integrator;
-    Strl slines(field, runge_kutta_integrator, dSep, dRat);
+    Strl slines(field, runge_kutta_integrator, separating_distance, saturation_ratio);
     uint32_t nlines = 0;
     uint32_t npts = 0;
     for (auto sit = slines.begin(); sit != slines.end(); sit++) {
@@ -104,18 +107,73 @@ bool CgalStreamlines::exec(vector<string> vargs) {
 
     fmt::print("Plotting points...\n");
     vector<uint8_t> dstimg(width * height);
-    auto pixels = dstimg.data();
     vector<vec2> pts;
-    pts.reserve(npts);
-    for (auto sit = slines.begin(); sit != slines.end(); sit++) {
-        int i = 0;
-        for (Point_iterator pit = sit->first; pit != sit->second; pit++) {
-            Point_2 p = *pit;
-            pts.emplace_back(vec2 {p.x(), p.y()});
+    int kernel_size;
+
+    // Fast path: no arrows.
+    if (arrow_type == 0) {
+        kernel_size = line_width;
+        pts.reserve(npts);
+        for (auto sit = slines.begin(); sit != slines.end(); sit++) {
+            for (Point_iterator pit = sit->first; pit != sit->second; ++pit) {
+                Point_2 p = *pit;
+                pts.emplace_back(vec2 {p.x(), p.y()});
+            }
+        }
+    } else {
+        kernel_size = 5;
+        pts.reserve(npts * line_width);
+        for (auto sit = slines.begin(); sit != slines.end(); sit++) {
+
+            // Skip short lines.
+            int npts = 0;
+            for (Point_iterator pit = sit->first; pit != sit->second; pit++){
+                npts++;
+            }
+            const int arrow_length = line_width * 3 / 2;
+            const int arrow_start = npts - arrow_length;
+            if (npts < arrow_length * 3) {
+                continue;
+            }
+
+            // Plot a series of perpendicular lines for each streamline.
+            int ptindex = 0;
+            for (Point_iterator pit = sit->first; pit != sit->second; ++pit, ++ptindex) {
+                float thickness;
+                if (ptindex < arrow_start) {
+                    thickness = float(line_width);
+                } else {
+                    float arrow_progress = float(npts - ptindex) / arrow_length;
+                    thickness = 3 * float(line_width) * arrow_progress;
+                }
+                vec2 p {pit->x(), pit->y()};
+                vec2 a, b;
+                if (ptindex == 0) {
+                    a = p;
+                    ++pit;
+                    b = {pit->x(), pit->y()};
+                    --pit;
+                } else {
+                    --pit;
+                    a = {pit->x(), pit->y()};
+                    ++pit;
+                    b = p;
+                }
+                vec2 d = normalize(b - a);
+                vec2 perp {-d.y, d.x};
+                a = p - 0.5f * thickness * perp;
+                b = p + 0.5f * thickness * perp;
+                vec2 dp = (b - a) / float(line_width);
+                p = a;
+                for (int i = 0; i < line_width; i++) {
+                    pts.emplace_back(p);
+                    p += dp;
+                }
+            }
         }
     }
-    splat_disks(pts.data(), npts, imagesize, dstimg.data(), 1.0f, kernel_size);
 
+    splat_disks(pts.data(), pts.size(), imagesize, dstimg.data(), 1.0f, kernel_size);
     cnpy::npy_save(output_img, dstimg.data(), {imagesize.y, imagesize.x}, "w");
     return true;
 }
