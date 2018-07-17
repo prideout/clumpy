@@ -82,7 +82,9 @@ bool CgalStreamlines::exec(vector<string> vargs) {
         for (uint32_t i = 0; i < gridsize.x; i++) {
             float vx = *velocityData++;
             float vy = *velocityData++;
-            field.set_field(i, j, Vector_2(vx, vy));
+            // CGAL seems to render streamlines backwards from advection, so here
+            // we negate the velocity.
+            field.set_field(i, j, Vector_2(-vx, -vy));
             // Skip 3 columns.
             velocityData += 2;
             velocityData += 2;
@@ -125,26 +127,43 @@ bool CgalStreamlines::exec(vector<string> vargs) {
         pts.reserve(npts * line_width);
         for (auto sit = slines.begin(); sit != slines.end(); sit++) {
 
-            // Skip short lines.
+            // Count the number of points in this streamline and find the max speed.
             int npts = 0;
             for (Point_iterator pit = sit->first; pit != sit->second; pit++){
                 npts++;
             }
-            const int arrow_length = line_width * 3 / 2;
-            const int arrow_start = npts - arrow_length;
-            if (npts < arrow_length * 3) {
+
+            // Compute various properties of this arrow.
+            const int arrowhead_length = line_width * 3 / 2;
+            const int padding = arrowhead_length;
+            int ideal_length_with_padding = arrowhead_length * 6;
+            const int ndivisions = (npts + ideal_length_with_padding - 1) /
+                    ideal_length_with_padding;
+            ideal_length_with_padding = npts / ndivisions;
+
+            // Skip short streamlines.
+            if (npts < arrowhead_length * 3) {
                 continue;
             }
+
+            // Skip streamlines that are near boundaries.
 
             // Plot a series of perpendicular lines for each streamline.
             int ptindex = 0;
             for (Point_iterator pit = sit->first; pit != sit->second; ++pit, ++ptindex) {
+
+                int tail = ideal_length_with_padding * (ptindex / ideal_length_with_padding);
+                int head = min(tail + ideal_length_with_padding, npts) - 1;
+
                 float thickness;
-                if (ptindex < arrow_start) {
+                if (ptindex < tail + padding) {
+                    continue;
+                }
+                if (ptindex < head - arrowhead_length) {
                     thickness = float(line_width);
                 } else {
-                    float arrow_progress = float(npts - ptindex) / arrow_length;
-                    thickness = 3 * float(line_width) * arrow_progress;
+                    float arrowhead_progress = float(head - ptindex) / arrowhead_length;
+                    thickness = 3 * float(line_width) * arrowhead_progress;
                 }
                 vec2 p {pit->x(), pit->y()};
                 vec2 a, b;
