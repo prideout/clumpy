@@ -129,13 +129,13 @@ bool Test::exec(vector<string> args) {
     if (true) {
         // from PIL import ImageOps
         // im = ImageOps.expand(im, border=(int((1920-1024)/2),0), fill=0xff785936)
-        exec(infinite_zoom, "1024x1024 1 98");
+        exec(infinite_zoom, "1024x1024 1 22");
         exec(infinite_zoom, "1024x1024 1 07");
         spawn_python(R"(
             import numpy as np
             from os import system
             from PIL import Image
-            im0 = np.load("island98.npy")
+            im0 = np.load("island22.npy")
             im1 = np.load("island07.npy")
             im = np.hstack([im0, im1])
             im = Image.fromarray(im, "RGBA")

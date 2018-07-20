@@ -66,17 +66,17 @@ float falloff(float t) {
 
 // Returns gradient noise in .x and its derivatives in .yz
 // The range is well inside [-1,+1], approx [-0.7,+0.7].
-vec3 gradnoise(vec2 p) {
+vec3 gradnoise(vec2 p, int32_t seed) {
     i32vec2 i(floor(p));
     vec2 f(fract(p));
 
     // Quintic interpolation.
     vec2 u = f*f*f*(f*(f*6.0f-15.0f)+10.0f);
 
-    vec2 ga = noisegrad( i + i32vec2(0,0) );
-    vec2 gb = noisegrad( i + i32vec2(1,0) );
-    vec2 gc = noisegrad( i + i32vec2(0,1) );
-    vec2 gd = noisegrad( i + i32vec2(1,1) );
+    vec2 ga = noisegrad( i + seed + i32vec2(0,0) );
+    vec2 gb = noisegrad( i + seed + i32vec2(1,0) );
+    vec2 gc = noisegrad( i + seed + i32vec2(0,1) );
+    vec2 gd = noisegrad( i + seed + i32vec2(1,1) );
 
     float va = dot( ga, f - vec2(0,0) );
     float vb = dot( gb, f - vec2(1,0) );
@@ -113,33 +113,44 @@ bool InfiniteZoom::exec(vector<string> vargs) {
     // "Viewport Space" is <fp32,fp32> with -1,+1 at upper left.
     // -1.0 is the left  edge of pixel (0)
     // +1.0 is the right edge of pixel (w-1)
-
     const float dx = 2.0f / width;
     const float sx = -1.0f + dx * 0.5;
     const float dy = 2.0f / height;
     const float sy = 1.0f - dy * 0.5;
 
     vector<float> fresult(width * height);
+    auto add_octave = [&](float freq, float ampl, int seed) {
+        float* fdata = fresult.data();
+        for (int row = 0; row < height; ++row) {
+            const float y = sy - row * dy;
+            for (int col = 0; col < width; ++col, ++fdata) {
+                const float x = sx + col * dx;
+                const vec2 p(x, y);
+                *fdata += ampl * gradnoise(p * freq, seed).x;
+            }
+        }
+    };
+
+    float freq = 4;
+    float ampl = 0.7;
+    add_octave(freq, ampl, 0);
+    freq *= 2; ampl /= 2;
+    add_octave(freq, ampl, 1);
+    freq *= 2; ampl /= 2;
+    add_octave(freq, ampl, 2);
+    freq *= 2; ampl /= 2;
+    add_octave(freq, ampl, 3);
+    freq *= 2; ampl /= 2;
+    add_octave(freq, ampl, 4);
+
+    // Transform floats to colors.
     float* fdata = fresult.data();
     for (int row = 0; row < height; ++row) {
         const float y = sy - row * dy;
         for (int col = 0; col < width; ++col, ++fdata) {
             const float x = sx + col * dx;
-            const vec2 p(x, y);
-            float freq = 4;
-            float ampl = 0.7;
-            float N = 0;
-            N += ampl * gradnoise(p * freq).x;
-            freq *= 2; ampl /= 2;
-            N += ampl * gradnoise(p * freq).x;
-            freq *= 2; ampl /= 2;
-            N += ampl * gradnoise(p * freq).x;
-            freq *= 2; ampl /= 2;
-            N += ampl * gradnoise(p * freq).x;
-            freq *= 2; ampl /= 2;
-            N += ampl * gradnoise(p * freq).x;
             const float F = falloff(x) * falloff(y);
-            *fdata = F + N - 0.5f;
+            *fdata += F - 0.5f;
         }
     }
 
