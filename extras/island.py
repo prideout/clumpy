@@ -6,6 +6,8 @@
 import numpy as np
 import imageio
 import time
+import math
+import cairo
 from os import system
 from PIL import Image
 
@@ -106,12 +108,30 @@ def main():
         print("TargetPt = {}".format(TargetPt))
 
 def splat_point(rgb_array, pxcoord, rgb):
-    row, col = map(int, pxcoord)
-    for r in range(row - 1, row + 2):
-        for c in range(col - 1, col + 2):
-            r2 = max(0, min(Dims[1] - 1, r))
-            c2 = max(0, min(Dims[0] - 1, c))
-            rgb_array[r2][c2] = rgb
+    dims = rgb_array.shape
+    surface = cairo.ImageSurface(cairo.FORMAT_A8, dims[0], dims[1])
+    ctx = cairo.Context(surface)
+    if False:
+        ctx.set_line_cap(cairo.LINE_CAP_ROUND)
+        ctx.set_line_width(dims[0] / 40.0)
+        ctx.move_to(pxcoord[0], pxcoord[1])
+    else:
+        ctx.set_line_width(dims[0] / 150.0)
+        ctx.save()
+        ctx.translate(pxcoord[1], pxcoord[0])
+        ctx.scale(dims[0] / 60.0, dims[1] / 60.0)
+        ctx.arc(0., 0., 1., 0., 2 * math.pi)
+        ctx.restore()
+    ctx.close_path()
+    ctx.stroke()
+    if False:
+        f = cairo.ToyFontFace("")
+        ctx.move_to(200, 200)
+        ctx.show_text("Philip")
+    buf = surface.get_data()
+    L = np.ndarray(shape=dims[:2], dtype=np.uint8, buffer=buf)
+    L = np.array([L, L, L]).swapaxes(0, 2).swapaxes(0, 1)
+    np.copyto(rgb_array, L + np.uint8(np.float32(rgb_array) * (255 - L) / 255.0))
 
 def clumpy(cmd):
     result = system('./clumpy ' + cmd)
