@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/prideout/clumpy.svg?branch=master)](https://travis-ci.org/prideout/clumpy)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/prideout/clumpy/blob/master/LICENSE)
 
 This tool can manipulate or generate large swaths of image data stored in [numpy
 files](https://docs.scipy.org/doc/numpy/neps/npy-format.html). It's a sandbox for implementing
@@ -8,6 +9,10 @@ operations in C++ that are either slow or non-existent in [pillow](https://pytho
 Since it's just a command line tool, it doesn't contain any
 [FFI](https://en.wikipedia.org/wiki/Foreign_function_interface) messiness. Feel free to contribute
 by adding your own command, but keep it simple! Add a `cc` file and make a pull request.
+
+This is really just a toy library; for serious application you might want to look at
+[xtensor](https://github.com/QuantStack/xtensor) (which can read / write npy files) and
+[xtensor-io](https://github.com/QuantStack/xtensor-io).
 
 ---
 

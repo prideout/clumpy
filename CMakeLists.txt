@@ -25,6 +25,7 @@ set(CMDS
   commands/curl_2d.cc
   commands/generate_dshapes.cc
   commands/generate_simplex.cc
+  commands/gradient_noise.cc
   commands/splat_points.cc
   commands/test_clumpy.cc
   commands/visualize_sdf.cc)

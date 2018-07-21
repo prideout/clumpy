@@ -5,7 +5,8 @@ from PIL import Image
 from os import system
 
 def clumpy(cmd):
-    system('./clumpy ' + cmd)
+    result = system('./clumpy ' + cmd)
+    if result: raise Exception("clumpy failed with: " + cmd)
 
 NOISE_SCALE = 0.7
 DISTANCE_SCALE = 0.5
