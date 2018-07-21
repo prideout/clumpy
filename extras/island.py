@@ -13,13 +13,13 @@ import time
 import math
 import cairo
 from os import system
-# from PIL import Image
 from tqdm import tqdm
 
 Dims = np.uint16([512, 512])
 Lut = np.float32(np.zeros([256, 3]))
 InitialFrequency = 1.0
 NumOctaves = 4
+NumFrames = 60
 
 # Define an intersection line in pixel coordinates
 TargetLineSegment = ( Dims / 2.0, [0, Dims[1] * 0.75] )
@@ -44,7 +44,7 @@ def main():
     update_heightmap()
     TargetPt = marching_line(HeightMap, TargetLineSegment)
     writer = imageio.get_writer('out.mp4', fps=30)
-    for frame in tqdm(range(5)):
+    for frame in tqdm(range(NumFrames)):
         update_heightmap()
         # TargetPt = marching_line(HeightMap, TargetLineSegment)
         rgb = render_heightmap()
@@ -103,26 +103,25 @@ def draw_overlay(dst, lineseg, pxcoord):
     dims = dst.shape
     surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, dims[0], dims[1])
     ctx = cairo.Context(surface)
-    ctx.set_source_rgb(1.0, 0.8, 0.8)
     ctx.set_line_width(dims[0] / 150.0)
-    
-    ctx.move_to(lineseg[0][0], lineseg[0][1])
-    ctx.line_to(lineseg[1][0], lineseg[1][1])
-    # ctx.close_path()
+    # Stroke a path along lineseg
+    ctx.set_source_rgba(1.0, 0.8, 0.8, 0.8)
+    ctx.move_to(lineseg[0][1], lineseg[0][0])
+    ctx.line_to(lineseg[1][1], lineseg[1][0])
     ctx.stroke()
-    
+    # Draw circle around pxcoord
+    ctx.set_source_rgba(1.0, 0.8, 0.8)
     ctx.save()
     ctx.translate(pxcoord[1], pxcoord[0])
     ctx.scale(dims[0] / 60.0, dims[1] / 60.0)
     ctx.arc(0., 0., 1., 0., 2 * math.pi)
     ctx.restore()
-    # ctx.close_path()
     ctx.stroke()
-
     if False:
         f = cairo.ToyFontFace("")
         ctx.move_to(200, 200)
         ctx.show_text("Philip")
+    # Perform composition
     buf = surface.get_data()
     rgb = np.ndarray(shape=dims[:2], dtype=np.uint32, buffer=buf)
     color = np.float32([(rgb >> 8) & 0xff, (rgb >> 16) & 0xff, (rgb >> 0) & 0xff])

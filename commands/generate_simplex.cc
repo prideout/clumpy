@@ -10,7 +10,7 @@ struct GenerateSimplex : ClumpyCommand {
     GenerateSimplex() {}
     bool exec(vector<string> args) override;
     string description() const override {
-        return "generate simplex noise in [-1,+1]";
+        return "generate simplex noise";
     }
     string usage() const override {
         return "<dims> <amplitude> <frequency> <seed> <output_img>";
