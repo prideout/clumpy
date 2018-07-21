@@ -16,8 +16,8 @@ from os import system
 # from PIL import Image
 from tqdm import tqdm
 
-Dims = np.uint16([256, 256])
-Lut = np.uint8(np.zeros([256, 3]))
+Dims = np.uint16([512, 512])
+Lut = np.float32(np.zeros([256, 3]))
 InitialFrequency = 1.0
 NumOctaves = 4
 
@@ -48,7 +48,7 @@ def main():
         update_heightmap()
         # TargetPt = marching_line(HeightMap, TargetLineSegment)
         rgb = render_heightmap()
-        writer.append_data(rgb)
+        writer.append_data(np.uint8(rgb))
         shrink_viewport()
     writer.close()
 
@@ -99,21 +99,17 @@ def shrink_viewport():
     row = (top - y) * Dims[1] / vpheight
     TargetPt = [row, col]
 
-def draw_overlay(rgb_array, lineseg, pxcoord):
-    dims = rgb_array.shape
-    surface = cairo.ImageSurface(cairo.FORMAT_A8, dims[0], dims[1])
+def draw_overlay(dst, lineseg, pxcoord):
+    dims = dst.shape
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, dims[0], dims[1])
     ctx = cairo.Context(surface)
-    if False:
-        ctx.set_line_cap(cairo.LINE_CAP_ROUND)
-        ctx.set_line_width(dims[0] / 40.0)
-        ctx.move_to(pxcoord[0], pxcoord[1])
-    else:
-        ctx.set_line_width(dims[0] / 150.0)
-        ctx.save()
-        ctx.translate(pxcoord[1], pxcoord[0])
-        ctx.scale(dims[0] / 60.0, dims[1] / 60.0)
-        ctx.arc(0., 0., 1., 0., 2 * math.pi)
-        ctx.restore()
+    ctx.set_source_rgb(1.0, 0.8, 0.8)
+    ctx.set_line_width(dims[0] / 150.0)
+    ctx.save()
+    ctx.translate(pxcoord[1], pxcoord[0])
+    ctx.scale(dims[0] / 60.0, dims[1] / 60.0)
+    ctx.arc(0., 0., 1., 0., 2 * math.pi)
+    ctx.restore()
     ctx.close_path()
     ctx.stroke()
     if False:
@@ -121,9 +117,11 @@ def draw_overlay(rgb_array, lineseg, pxcoord):
         ctx.move_to(200, 200)
         ctx.show_text("Philip")
     buf = surface.get_data()
-    L = np.ndarray(shape=dims[:2], dtype=np.uint8, buffer=buf)
-    L = np.array([L, L, L]).swapaxes(0, 2).swapaxes(0, 1)
-    np.copyto(rgb_array, L + np.uint8(np.float32(rgb_array) * (255 - L) / 255.0))
+    rgb = np.ndarray(shape=dims[:2], dtype=np.uint32, buffer=buf)
+    color = np.float32([(rgb >> 8) & 0xff, (rgb >> 16) & 0xff, (rgb >> 0) & 0xff]).swapaxes(0, 2).swapaxes(0, 1)
+    a = np.float32((rgb >> 24) & 0xff) / 255.0
+    alpha = np.array([a, a, a]).swapaxes(0, 2).swapaxes(0, 1)
+    np.copyto(dst, dst * (1 - alpha) + color * alpha)
 
 def clumpy(cmd):
     result = system('./clumpy ' + cmd)
@@ -160,7 +158,7 @@ def create_gradient():
     r = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(0.0,     0.0, num=128)])
     g = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(128.0, 255.0, num=128)])
     b = np.hstack([np.linspace(128.0, 255.0, num=128), np.linspace(0.0,    64.0, num=128)])
-    lut = np.uint8([r, g, b]).transpose()
+    lut = np.float32([r, g, b]).transpose()
     np.copyto(Lut, lut)
     '''
     Gradient = [
