@@ -105,20 +105,28 @@ def draw_overlay(dst, lineseg, pxcoord):
     ctx = cairo.Context(surface)
     ctx.set_source_rgb(1.0, 0.8, 0.8)
     ctx.set_line_width(dims[0] / 150.0)
+    
+    ctx.move_to(lineseg[0][0], lineseg[0][1])
+    ctx.line_to(lineseg[1][0], lineseg[1][1])
+    # ctx.close_path()
+    ctx.stroke()
+    
     ctx.save()
     ctx.translate(pxcoord[1], pxcoord[0])
     ctx.scale(dims[0] / 60.0, dims[1] / 60.0)
     ctx.arc(0., 0., 1., 0., 2 * math.pi)
     ctx.restore()
-    ctx.close_path()
+    # ctx.close_path()
     ctx.stroke()
+
     if False:
         f = cairo.ToyFontFace("")
         ctx.move_to(200, 200)
         ctx.show_text("Philip")
     buf = surface.get_data()
     rgb = np.ndarray(shape=dims[:2], dtype=np.uint32, buffer=buf)
-    color = np.float32([(rgb >> 8) & 0xff, (rgb >> 16) & 0xff, (rgb >> 0) & 0xff]).swapaxes(0, 2).swapaxes(0, 1)
+    color = np.float32([(rgb >> 8) & 0xff, (rgb >> 16) & 0xff, (rgb >> 0) & 0xff])
+    color = color.swapaxes(0, 2).swapaxes(0, 1)
     a = np.float32((rgb >> 24) & 0xff) / 255.0
     alpha = np.array([a, a, a]).swapaxes(0, 2).swapaxes(0, 1)
     np.copyto(dst, dst * (1 - alpha) + color * alpha)
