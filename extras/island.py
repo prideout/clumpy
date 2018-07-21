@@ -11,7 +11,7 @@ import cairo
 from os import system
 from PIL import Image
 
-Dims = np.array([256, 256])
+Dims = np.array([512, 512])
 InitialFrequency = 1.0
 NumOctaves = 4
 
