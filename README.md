@@ -115,6 +115,15 @@ Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).show()
 
 TODO
 
+Heman examples, then Deprecate Heman (add to README, then "Archive")
+
+cnpy.h should be abstracted out into a base class methods for save and load.
+
+appveyer windows build, like:
+    https://t.co/bkJ7ZqXAGy
+
+rename extras to docs then add a mkdocs pipeline
+
 heman color island but without lighting
     shouldn't require any new functionality
     could be a python-first example.

@@ -5,6 +5,7 @@
 #include <glm/vec2.hpp>
 #include <glm/ext.hpp>
 
+#include <algorithm>
 #include <random>
 #include <csignal>
 
