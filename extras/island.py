@@ -1,34 +1,117 @@
 #!/usr/bin/env python3
 
-# Pixel coordinates are [row,column] integers that increase right-down (like Raster Scans)
-# Viewport coordinates are [x,y] floats that increase right-up (like Mathematics)
+# Pixel coordinates are [row,column] and increase right-down (like Raster Scans)
+# Viewport coordinates are [x,y] and increase right-up (like Mathematics)
 
 import numpy as np
 import imageio
+import time
 from os import system
 from PIL import Image
 
-Dims = [256, 256]
+Dims = np.array([256, 256])
 InitialFrequency = 1.0
-Zoom = 0
-shift = [-.2, -.1]
-Viewport = [(-1+shift[0], -1+shift[1]), (+1+shift[0], +1+shift[1])]
-TargetPt = [0, 0]
-TargetLineSegment = ( [128,128], [0,100] ) # draw a line from center to top-right
+NumOctaves = 4
 
-def main():
-    noise = gradient_noise(Dims, Viewport, InitialFrequency, seed=Zoom)
-    TargetPt = marching_line(noise, TargetLineSegment)
-    print("TargetPt =", TargetPt)
-    L = np.uint8(255 * noise)
-    L = np.array([L, L, L]).swapaxes(0, 2).swapaxes(0, 1)
+# Define an intersection line in pixel coordinates
+TargetLineSegment = ( Dims / 2.0, [0, Dims[1] * 0.75] )
+
+Zoom = 0 # used only as a seed for randomness
+Viewport = np.array([(-1, -1), (+1, +1)])
+TargetPt = [0, 0]
+HeightMap = np.zeros(Dims)
+AccumMap = np.zeros(Dims)
+
+# TODO: Look at bottom of file for a nicer gradient.
+r = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(0.0,     0.0, num=128)])
+g = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(128.0, 255.0, num=128)])
+b = np.hstack([np.linspace(128.0, 255.0, num=128), np.linspace(0.0,    64.0, num=128)])
+Lut = np.uint8([r, g, b]).transpose()
+
+def update_heightmap():
+    global HeightMap
+    frequency = InitialFrequency
+    HeightMap = np.copy(AccumMap)
+    for i in range(NumOctaves):
+        HeightMap += gradient_noise(Dims, Viewport, frequency, seed=Zoom+i)
+        HeightMap *= 2
+        frequency *= 2
+
+def render_heightmap():
+    L = np.uint8(255 * (0.5 + HeightMap * 0.5))
+    L = Lut[L]
     splat_point(L, TargetPt, [255, 0, 0])
     img = Image.fromarray(L, 'RGB')
     img = img.resize((1024, 1024), Image.NEAREST)
     img.save('gradient_noise.png')
 
+def shrink_viewport():
+    global Viewport
+    global TargetLineSegment
+    global TargetPt
+    row, col = TargetPt
+    (left, bottom), (right, top) = Viewport
+    vpwidth = right - left
+    vpheight = top - bottom
+    x = left + vpwidth * float(col) / Dims[0]
+    y = top - vpheight * float(row) / Dims[1]
+    M = 0.1
+    dx = vpwidth / float(Dims[0])
+    dy = vpheight / float(Dims[1])
+    cx = (left + right) * 0.5
+    cy = (bottom + top) * 0.5
+    x -= cx
+    y -= cy
+    if abs(x) < M:
+        print('L & R inward')
+        left += dx
+        right -= dx
+    elif x < 0:
+        print('right inward')
+        right -= dx * 2
+    else:
+        print('left inward')
+        left += dx * 2
+    if abs(y) < M:
+        print('T & B inward')
+        bottom += dy
+        top -= dy
+    elif y < 0:
+        print('T downward')
+        top -= dy * 2
+    else:
+        print('B upward')
+        bottom += dy * 2
+    x += cx
+    y += cy
+    # TODO: transform TargetLineSegment rather than TargetPt
+    Viewport = [(left, bottom), (right, top)]
+    vpwidth = right - left
+    vpheight = top - bottom
+    col = (x - left) * Dims[0] / vpwidth
+    row = (top - y) * Dims[1] / vpheight
+    TargetPt = [row, col]
+
+def main():
+    global TargetPt
+    update_heightmap()
+    TargetPt = marching_line(HeightMap, TargetLineSegment)
+    print("TargetPt = {}".format(TargetPt))
+    for frame in range(20):
+        update_heightmap()
+        # TargetPt = marching_line(HeightMap, TargetLineSegment)
+        render_heightmap()
+        time.sleep(1) # 1 second
+        shrink_viewport()
+        print("TargetPt = {}".format(TargetPt))
+
 def splat_point(rgb_array, pxcoord, rgb):
-    rgb_array[pxcoord[0]][pxcoord[1]] = rgb
+    row, col = map(int, pxcoord)
+    for r in range(row - 1, row + 2):
+        for c in range(col - 1, col + 2):
+            r2 = max(0, min(Dims[1] - 1, r))
+            c2 = max(0, min(Dims[0] - 1, c))
+            rgb_array[r2][c2] = rgb
 
 def clumpy(cmd):
     result = system('./clumpy ' + cmd)
@@ -67,3 +150,15 @@ def marching_line(image_array, line_segment):
     return [-1, -1]
 
 main()
+
+'''
+Gradient = [
+    000, 0x001070, # Dark Blue
+    126, 0x2C5A7C, # Light Blue
+    127, 0xE0F0A0, # Yellow
+    128, 0x5D943C, # Dark Green
+    160, 0x606011, # Brown
+    200, 0xFFFFFF, # White
+    255, 0xFFFFFF, # White
+]
+'''

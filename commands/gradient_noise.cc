@@ -125,8 +125,6 @@ bool GradientNoise::exec(vector<string> vargs) {
     const float frequency = atof(vargs[2].c_str());
     const int seed = atoi(vargs[3].c_str());
     const string output_file = "gradient_noise.npy";
-    fmt::print("gradient_noise {}x{} [{},{},{},{}] {} {}\n",
-        dims.x, dims.y, viewport.x, viewport.y, viewport.z, viewport.w, frequency, seed);
 
     // Initialize the table of gradient vectors.
     initnoise(seed);
@@ -161,7 +159,6 @@ bool GradientNoise::exec(vector<string> vargs) {
     add_octave(result, frequency, seed);
 
     cnpy::npy_save(output_file, result.data(), {dims.y, dims.x}, "w");
-    fmt::print("Wrote {}\n", output_file);
     return true;
 }
 
