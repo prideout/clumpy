@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
-# Pixel coordinates are [row,column] and increase right-down (like Raster Scans)
-# Viewport coordinates are [x,y] and increase right-up (like Mathematics)
+'''
+Creates a movie of infinitely zooming FBM.
+
+Pixel coordinates are [row,column] and increase right-down (like Raster Scans)
+Viewport coordinates are [x,y] and increase right-up (like Mathematics)
+'''
 
 import numpy as np
 import imageio
@@ -9,9 +13,11 @@ import time
 import math
 import cairo
 from os import system
-from PIL import Image
+# from PIL import Image
+from tqdm import tqdm
 
-Dims = np.array([512, 512])
+Dims = np.uint16([256, 256])
+Lut = np.uint8(np.zeros([256, 3]))
 InitialFrequency = 1.0
 NumOctaves = 4
 
@@ -19,16 +25,10 @@ NumOctaves = 4
 TargetLineSegment = ( Dims / 2.0, [0, Dims[1] * 0.75] )
 
 Zoom = 0 # used only as a seed for randomness
-Viewport = np.array([(-1, -1), (+1, +1)])
+Viewport = np.float32([(-1, -1), (+1, +1)])
 TargetPt = [0, 0]
 HeightMap = np.zeros(Dims)
 AccumMap = np.zeros(Dims)
-
-# TODO: Look at bottom of file for a nicer gradient.
-r = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(0.0,     0.0, num=128)])
-g = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(128.0, 255.0, num=128)])
-b = np.hstack([np.linspace(128.0, 255.0, num=128), np.linspace(0.0,    64.0, num=128)])
-Lut = np.uint8([r, g, b]).transpose()
 
 def update_heightmap():
     global HeightMap
@@ -39,13 +39,24 @@ def update_heightmap():
         HeightMap *= 2
         frequency *= 2
 
+def main():
+    global TargetPt
+    update_heightmap()
+    TargetPt = marching_line(HeightMap, TargetLineSegment)
+    writer = imageio.get_writer('out.mp4', fps=30)
+    for frame in tqdm(range(5)):
+        update_heightmap()
+        # TargetPt = marching_line(HeightMap, TargetLineSegment)
+        rgb = render_heightmap()
+        writer.append_data(rgb)
+        shrink_viewport()
+    writer.close()
+
 def render_heightmap():
     L = np.uint8(255 * (0.5 + HeightMap * 0.5))
     L = Lut[L]
-    splat_point(L, TargetPt, [255, 0, 0])
-    img = Image.fromarray(L, 'RGB')
-    img = img.resize((1024, 1024), Image.NEAREST)
-    img.save('gradient_noise.png')
+    draw_overlay(L, TargetLineSegment, TargetPt)
+    return L
 
 def shrink_viewport():
     global Viewport
@@ -57,32 +68,26 @@ def shrink_viewport():
     vpheight = top - bottom
     x = left + vpwidth * float(col) / Dims[0]
     y = top - vpheight * float(row) / Dims[1]
-    M = 0.1
     dx = vpwidth / float(Dims[0])
     dy = vpheight / float(Dims[1])
+    M = min(dx, dy)
     cx = (left + right) * 0.5
     cy = (bottom + top) * 0.5
     x -= cx
     y -= cy
     if abs(x) < M:
-        print('L & R inward')
         left += dx
         right -= dx
     elif x < 0:
-        print('right inward')
         right -= dx * 2
     else:
-        print('left inward')
         left += dx * 2
     if abs(y) < M:
-        print('T & B inward')
         bottom += dy
         top -= dy
     elif y < 0:
-        print('T downward')
         top -= dy * 2
     else:
-        print('B upward')
         bottom += dy * 2
     x += cx
     y += cy
@@ -94,20 +99,7 @@ def shrink_viewport():
     row = (top - y) * Dims[1] / vpheight
     TargetPt = [row, col]
 
-def main():
-    global TargetPt
-    update_heightmap()
-    TargetPt = marching_line(HeightMap, TargetLineSegment)
-    print("TargetPt = {}".format(TargetPt))
-    for frame in range(20):
-        update_heightmap()
-        # TargetPt = marching_line(HeightMap, TargetLineSegment)
-        render_heightmap()
-        time.sleep(1) # 1 second
-        shrink_viewport()
-        print("TargetPt = {}".format(TargetPt))
-
-def splat_point(rgb_array, pxcoord, rgb):
+def draw_overlay(rgb_array, lineseg, pxcoord):
     dims = rgb_array.shape
     surface = cairo.ImageSurface(cairo.FORMAT_A8, dims[0], dims[1])
     ctx = cairo.Context(surface)
@@ -145,12 +137,6 @@ def gradient_noise(dims, viewport, frequency, seed):
     clumpy("gradient_noise " + args)
     return np.load('gradient_noise.npy')
 
-def make_video(arrays, outfile = 'out.mp4'):
-    writer = imageio.get_writer(outfile, fps=30)
-    for array in arrays:
-        writer.append_data(array)
-    writer.close()
-
 def marching_line(image_array, line_segment):
     x0, y0 = line_segment[0]
     x1, y1 = line_segment[1]
@@ -169,16 +155,24 @@ def marching_line(image_array, line_segment):
             return [i, j]
     return [-1, -1]
 
-main()
+# TODO: Look at bottom for a nicer gradient.
+def create_gradient():
+    r = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(0.0,     0.0, num=128)])
+    g = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(128.0, 255.0, num=128)])
+    b = np.hstack([np.linspace(128.0, 255.0, num=128), np.linspace(0.0,    64.0, num=128)])
+    lut = np.uint8([r, g, b]).transpose()
+    np.copyto(Lut, lut)
+    '''
+    Gradient = [
+        000, 0x001070, # Dark Blue
+        126, 0x2C5A7C, # Light Blue
+        127, 0xE0F0A0, # Yellow
+        128, 0x5D943C, # Dark Green
+        160, 0x606011, # Brown
+        200, 0xFFFFFF, # White
+        255, 0xFFFFFF, # White
+    ]
+    '''
 
-'''
-Gradient = [
-    000, 0x001070, # Dark Blue
-    126, 0x2C5A7C, # Light Blue
-    127, 0xE0F0A0, # Yellow
-    128, 0x5D943C, # Dark Green
-    160, 0x606011, # Brown
-    200, 0xFFFFFF, # White
-    255, 0xFFFFFF, # White
-]
-'''
+create_gradient()
+main()
