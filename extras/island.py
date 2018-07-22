@@ -24,10 +24,13 @@ from tqdm import tqdm
 import cairo
 import imageio
 import numpy as np
-import scipy.ndimage
+import scipy.interpolate as interp
+
+def vec2(x, y): return np.array([x, y])
+def vec3(x, y, z): return np.array([x, y, z])
 
 # Global configuration.
-Dims = [512,512]
+Resolution = [512,512]
 Lut = np.zeros([256,3], dtype=np.float)
 InitialFrequency = 1.0
 NumOctaves = 4
@@ -39,25 +42,29 @@ Zoom = int(0)
 tsTargetLn = np.float32(wsTargetLn)
 tsViewport = np.float32([(0,0), (1,1)])
 tsTargetPt = [-1,-1]
-Shape = [Dims[1], Dims[0]]  ## Numpy wants Rows,Cols rather than Width,Height.
+Shape = [Resolution[1], Resolution[0]]  ## Numpy wants Rows,Cols rather than Width,Height.
 ViewImage = np.zeros(Shape) ## Current viewport. Includes NumOctaves of high-freq noise.
 TileImage = np.zeros(Shape) ## Smallest encompassing tile (accumulated low-freq noise).
+Domain = [np.linspace(0, 1, num) for num in Resolution]
+
+def resample_image(dst, src, viewport):
+    [(left, top), (right, bottom)] = viewport
+    width, height = Resolution
+    urange = np.linspace(left, right, num=width)
+    vrange = np.linspace(top, bottom, num=height)
+    f = interp.interp1d(Domain[0], src, kind='linear')
+    temp = f(vrange)
+    f = interp.interp1d(Domain[1], temp.T, kind='linear')
+    newimg = f(urange)
+    np.copyto(dst, newimg)
 
 def update_view():
     frequency = InitialFrequency
-    if False:
-        # TODO: copy a portion of magnified_tile into ViewImage (should be a fn)
-        import scipy.interpolate as interp
-        f = interp.interp1d(y, im, kind='linear')
-        temp = f(new_y)
-        f = interp.interp1d(x, temp.T, kind='linear')
-        new_im = f(new_x).T
-    else:
-        np.copyto(ViewImage, TileImage)
+    resample_image(ViewImage, TileImage, tsViewport)
     for i in range(NumOctaves):
-        noise = gradient_noise(Dims, tsViewport, frequency, seed=Zoom+i)
-        frequency *= 2
+        noise = gradient_noise(Resolution, tsViewport, frequency, seed=Zoom+i)
         np.copyto(ViewImage, 2 * (ViewImage + noise))
+        frequency *= 2
 
 def main():
     global tsTargetPt
@@ -68,7 +75,7 @@ def main():
         update_view()
         rgb = render_view()
         writer.append_data(np.uint8(rgb))
-        shrink_viewport(10)
+        shrink_viewport(zoom_speed=10, pan_speed=0.05)
     writer.close()
 
 def render_view():
@@ -83,28 +90,19 @@ def render_view():
     draw_overlay(L, vsTargetLn, vsTargetPt)
     return L
 
-def shrink_viewport(amount):
+def shrink_viewport(zoom_speed, pan_speed):
+    global tsViewport
     (left, top), (right, bottom) = tsViewport
-    vpwidth, vpheight = tsViewport[1] - tsViewport[0]
-    x = (tsTargetPt[0] - left) / vpwidth - 0.5
-    y = (tsTargetPt[1] - top) / vpheight - 0.5
-    dx = amount * vpwidth / Dims[0]
-    dy = amount * vpheight / Dims[1]
-    if abs(x) <= dx:
-        left += dx / 2
-        right -= dx / 2
-    elif x < 0:
-        right -= dx
-    else:
-        left += dx
-    if abs(y) <= dy:
-        top += dy / 2
-        bottom -= dy / 2
-    elif y < 0:
-        bottom -= dy
-    else:
-        top += dy
-    np.copyto(tsViewport, [(left, top), (right, bottom)])
+    vpextent = tsViewport[1] - tsViewport[0]
+    delta = zoom_speed * vpextent / Resolution
+    vsTargetPt = (tsTargetPt - tsViewport[0]) / vpextent
+    pandir = vsTargetPt - vec2(0.5, 0.5)
+    pan = pan_speed * pandir
+    tsViewport[0] += pan
+    tsViewport[1] += pan
+    # tsViewport += vec2(delta, -delta)
+    tsViewport[0] += delta
+    tsViewport[1] -= delta
 
 def draw_overlay(dst, lineseg, pxcoord):
     dims = [dst.shape[1], dst.shape[0]]
@@ -143,10 +141,10 @@ def clumpy(cmd):
     if result: raise Exception("clumpy failed with: " + cmd)
 
 def gradient_noise(dims, viewport, frequency, seed):
-    (left, bottom), (right, top) = 2 * (tsViewport - 0.5)
+    (left, top), (right, bottom) = 2 * (tsViewport - 0.5)
     args = "{}x{} '{},{},{},{}' {} {}".format(
         dims[0], dims[1],
-        left, top, right, bottom,
+        left, -bottom, right, -top,
         frequency, seed)
     clumpy("gradient_noise " + args)
     return np.load('gradient_noise.npy')
@@ -163,7 +161,7 @@ def marching_line(image_array, line_segment):
     x1, y1 = line_segment[1]
     val = sample_pixel(image_array, x0, y0)
     sgn = np.sign(val)
-    divs = float(max(Dims))
+    divs = float(max(Resolution))
     dx = (x1 - x0) / divs
     dy = (y1 - y0) / divs
     for i in range(int(divs)):
@@ -194,7 +192,7 @@ def create_gradient():
 
 # Hermite interpolation, also known as smoothstep:
 #     -1 => 0
-#      0 => 1 at t=0, 0 at t=+-1
+#      0 => 1
 #     +1 => 0
 def hermite(t):
     return 1 - (3 - 2*np.abs(t))*t*t
@@ -203,7 +201,7 @@ def create_basetile():
     rows, cols = Shape
     rows = hermite([np.linspace(-1.0, 1.0, num=rows)])
     cols = hermite([np.linspace(-1.0, 1.0, num=cols)]).T
-    kernel = rows * cols
+    kernel = rows * cols - 0.5
     np.copyto(TileImage, kernel)
 
 create_gradient()
