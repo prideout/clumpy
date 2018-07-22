@@ -26,32 +26,41 @@ import imageio
 import numpy as np
 import scipy.interpolate as interp
 
-def vec2(x, y): return np.array([x, y])
-def vec3(x, y, z): return np.array([x, y, z])
+def vec2(x, y): return np.array([x, y], dtype=np.float)
+def vec3(x, y, z): return np.array([x, y, z], dtype=np.float)
+def grid(w, h): return np.zeros([int(h), int(w)], dtype=np.float)
 
-# Global configuration.
-Resolution = [512,512]
-Lut = np.zeros([256,3], dtype=np.float)
+# Configuration.
+Resolution = vec2(512,512)
 InitialFrequency = 1.0
 NumOctaves = 4
 NumFrames = 60
-wsTargetLn = ([.5,.5], [.75,0])
+wsTargetLn = vec2([.5,.5], [.75,0])
+SeaLevel = 0.5
+NiceGradient = [
+    000, 0x001070 , # Dark Blue
+    126, 0x2C5A7C , # Light Blue
+    127, 0xE0F0A0 , # Yellow
+    128, 0x5D943C , # Dark Green
+    160, 0x606011 , # Brown
+    200, 0xFFFFFF , # White
+    255, 0xFFFFFF ] # White
 
-# Global variables.
+# Global data.
+Width, Height = Resolution
+Lut = grid(3, 256)
 Zoom = int(0)
-tsTargetLn = np.float32(wsTargetLn)
-tsViewport = np.float32([(0,0), (1,1)])
-tsTargetPt = [-1,-1]
-Shape = [Resolution[1], Resolution[0]]  ## Numpy wants Rows,Cols rather than Width,Height.
-ViewImage = np.zeros(Shape) ## Current viewport. Includes NumOctaves of high-freq noise.
-TileImage = np.zeros(Shape) ## Smallest encompassing tile (accumulated low-freq noise).
+tsTargetLn = np.copy(wsTargetLn)
+tsViewport = vec2((0,0), (1,1))
+tsTargetPt = vec2(-1,-1)
+ViewImage = grid(Width, Height) ## Current viewport. Includes NumOctaves of high-freq noise.
+TileImage = grid(Width, Height) ## Smallest encompassing tile (accumulated low-freq noise).
 Domain = [np.linspace(0, 1, num) for num in Resolution]
 
 def resample_image(dst, src, viewport):
     [(left, top), (right, bottom)] = viewport
-    width, height = Resolution
-    urange = np.linspace(left, right, num=width)
-    vrange = np.linspace(top, bottom, num=height)
+    urange = np.linspace(left, right, num=Width)
+    vrange = np.linspace(top, bottom, num=Height)
     f = interp.interp1d(Domain[0], src, kind='linear')
     temp = f(vrange)
     f = interp.interp1d(Domain[1], temp.T, kind='linear')
@@ -92,17 +101,12 @@ def render_view():
 
 def shrink_viewport(zoom_speed, pan_speed):
     global tsViewport
-    (left, top), (right, bottom) = tsViewport
     vpextent = tsViewport[1] - tsViewport[0]
-    delta = zoom_speed * vpextent / Resolution
     vsTargetPt = (tsTargetPt - tsViewport[0]) / vpextent
     pandir = vsTargetPt - vec2(0.5, 0.5)
-    pan = pan_speed * pandir
-    tsViewport[0] += pan
-    tsViewport[1] += pan
-    # tsViewport += vec2(delta, -delta)
-    tsViewport[0] += delta
-    tsViewport[1] -= delta
+    pan_delta = pan_speed * pandir
+    zoom_delta = zoom_speed * vpextent / Resolution
+    tsViewport += pan_delta + vec2(zoom_delta, -zoom_delta)
 
 def draw_overlay(dst, lineseg, pxcoord):
     dims = [dst.shape[1], dst.shape[0]]
@@ -175,15 +179,6 @@ def marching_line(image_array, line_segment):
 
 # TODO: use NiceGradient
 def create_gradient():
-    NiceGradient = [
-        000, 0x001070, # Dark Blue
-        126, 0x2C5A7C, # Light Blue
-        127, 0xE0F0A0, # Yellow
-        128, 0x5D943C, # Dark Green
-        160, 0x606011, # Brown
-        200, 0xFFFFFF, # White
-        255, 0xFFFFFF, # White
-    ]
     r = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(0.0,     0.0, num=128)])
     g = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(128.0, 255.0, num=128)])
     b = np.hstack([np.linspace(128.0, 255.0, num=128), np.linspace(0.0,    64.0, num=128)])
@@ -191,17 +186,14 @@ def create_gradient():
     np.copyto(Lut, lut)
 
 # Hermite interpolation, also known as smoothstep:
-#     -1 => 0
-#      0 => 1
-#     +1 => 0
+#     (-1 => 0)     (0 => 1)     (+1 => 0)
 def hermite(t):
     return 1 - (3 - 2*np.abs(t))*t*t
 
 def create_basetile():
-    rows, cols = Shape
-    rows = hermite([np.linspace(-1.0, 1.0, num=rows)])
-    cols = hermite([np.linspace(-1.0, 1.0, num=cols)]).T
-    kernel = rows * cols - 0.5
+    rows = hermite([np.linspace(-1.0, 1.0, num=Height)])
+    cols = hermite([np.linspace(-1.0, 1.0, num=Width)]).T
+    kernel = rows * cols - SeaLevel
     np.copyto(TileImage, kernel)
 
 create_gradient()
