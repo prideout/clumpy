@@ -55,17 +55,6 @@ tsViewport = vec2((0,0), (1,1))
 tsTargetPt = vec2(-1,-1)
 ViewImage = grid(Width, Height) ## Current viewport. Includes NumOctaves of high-freq noise.
 TileImage = grid(Width, Height) ## Smallest encompassing tile (accumulated low-freq noise).
-Domain = [np.linspace(0, 1, num) for num in Resolution]
-
-def resample_image(dst, src, viewport):
-    [(left, top), (right, bottom)] = viewport
-    urange = np.linspace(left, right, num=Width)
-    vrange = np.linspace(top, bottom, num=Height)
-    f = interp.interp1d(Domain[0], src, kind='linear')
-    temp = f(vrange)
-    f = interp.interp1d(Domain[1], temp.T, kind='linear')
-    newimg = f(urange)
-    np.copyto(dst, newimg)
 
 def update_view():
     frequency = InitialFrequency
@@ -145,7 +134,7 @@ def clumpy(cmd):
     if result: raise Exception("clumpy failed with: " + cmd)
 
 def gradient_noise(dims, viewport, frequency, seed):
-    (left, top), (right, bottom) = 2 * (tsViewport - 0.5)
+    (left, top), (right, bottom) = 2 * (viewport - 0.5)
     args = "{}x{} '{},{},{},{}' {} {}".format(
         dims[0], dims[1],
         left, -bottom, right, -top,
@@ -182,20 +171,30 @@ def create_gradient():
     r = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(0.0,     0.0, num=128)])
     g = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(128.0, 255.0, num=128)])
     b = np.hstack([np.linspace(128.0, 255.0, num=128), np.linspace(0.0,    64.0, num=128)])
-    lut = np.float32([r, g, b]).transpose()
-    np.copyto(Lut, lut)
+    return np.float32([r, g, b]).transpose()
 
 # Hermite interpolation, also known as smoothstep:
 #     (-1 => 0)     (0 => 1)     (+1 => 0)
 def hermite(t):
     return 1 - (3 - 2*np.abs(t))*t*t
 
-def create_basetile():
-    rows = hermite([np.linspace(-1.0, 1.0, num=Height)])
-    cols = hermite([np.linspace(-1.0, 1.0, num=Width)]).T
-    kernel = rows * cols - SeaLevel
-    np.copyto(TileImage, kernel)
+def create_basetile(width, height):
+    rows = hermite([np.linspace(-1.0, 1.0, num=height)])
+    cols = hermite([np.linspace(-1.0, 1.0, num=width)]).T
+    return rows * cols - SeaLevel
 
-create_gradient()
-create_basetile()
+def resample_image(dst, src, viewport):
+    height, width = dst.shape
+    domain = [np.linspace(0, 1, num) for num in (width, height)]
+    [(left, top), (right, bottom)] = viewport
+    urange = np.linspace(left, right, num=width)
+    vrange = np.linspace(top, bottom, num=height)
+    f = interp.interp1d(domain[0], src, kind='linear')
+    temp = f(vrange)
+    f = interp.interp1d(domain[1], temp.T, kind='linear')
+    newimg = f(urange)
+    np.copyto(dst, newimg)
+
+np.copyto(Lut, create_gradient())
+np.copyto(TileImage, create_basetile(Width, Height))
 main()
