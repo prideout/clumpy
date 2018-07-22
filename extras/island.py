@@ -27,7 +27,7 @@ import numpy as np
 import scipy.ndimage
 
 # Global configuration.
-Dims = [1024,1024]
+Dims = [512,512]
 Lut = np.zeros([256,3], dtype=np.float)
 InitialFrequency = 1.0
 NumOctaves = 4
@@ -68,7 +68,7 @@ def main():
         update_view()
         rgb = render_view()
         writer.append_data(np.uint8(rgb))
-        shrink_viewport(4)
+        shrink_viewport(10)
     writer.close()
 
 def render_view():
@@ -90,21 +90,20 @@ def shrink_viewport(amount):
     y = (tsTargetPt[1] - top) / vpheight - 0.5
     dx = amount * vpwidth / Dims[0]
     dy = amount * vpheight / Dims[1]
-    M = min(dx, dy)
-    if abs(x) < M:
-        left += dx
-        right -= dx
+    if abs(x) <= dx:
+        left += dx / 2
+        right -= dx / 2
     elif x < 0:
-        right -= dx * 2
+        right -= dx
     else:
-        left += dx * 2
-    if abs(y) < M:
-        top += dy
-        bottom -= dy
+        left += dx
+    if abs(y) <= dy:
+        top += dy / 2
+        bottom -= dy / 2
     elif y < 0:
-        bottom -= dy * 2
+        bottom -= dy
     else:
-        top += dy * 2
+        top += dy
     np.copyto(tsViewport, [(left, top), (right, bottom)])
 
 def draw_overlay(dst, lineseg, pxcoord):
@@ -193,5 +192,20 @@ def create_gradient():
     lut = np.float32([r, g, b]).transpose()
     np.copyto(Lut, lut)
 
+# Hermite interpolation, also known as smoothstep:
+#     -1 => 0
+#      0 => 1 at t=0, 0 at t=+-1
+#     +1 => 0
+def hermite(t):
+    return 1 - (3 - 2*np.abs(t))*t*t
+
+def create_basetile():
+    rows, cols = Shape
+    rows = hermite([np.linspace(-1.0, 1.0, num=rows)])
+    cols = hermite([np.linspace(-1.0, 1.0, num=cols)]).T
+    kernel = rows * cols
+    np.copyto(TileImage, kernel)
+
 create_gradient()
+create_basetile()
 main()
