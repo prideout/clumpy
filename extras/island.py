@@ -20,6 +20,7 @@ At Z = 0, Tile Space is equivalent to World Space.
 
 from os import system
 from tqdm import tqdm
+from sdl2.ext import clipline
 
 import cairo
 import imageio
@@ -35,6 +36,7 @@ Resolution = vec2(512,512)
 InitialFrequency = 1.0
 NumOctaves = 4
 NumFrames = 60
+VideoFps = 10
 wsTargetLn = vec2([.5,.5], [.75,0])
 SeaLevel = 0.5
 NiceGradient = [
@@ -57,23 +59,56 @@ ViewImage = grid(Width, Height) ## Current viewport. Includes NumOctaves of high
 TileImage = grid(Width, Height) ## Smallest encompassing tile (accumulated low-freq noise).
 
 def update_view():
-    frequency = InitialFrequency
     resample_image(ViewImage, TileImage, tsViewport)
+    frequency = InitialFrequency
     for i in range(NumOctaves):
         noise = gradient_noise(Resolution, tsViewport, frequency, seed=Zoom+i)
         np.copyto(ViewImage, 2 * (ViewImage + noise))
         frequency *= 2
 
+def increment_zoom():
+    global Zoom
+    global tsTargetPt
+    global tsTargetLn
+    # Render a new base tile by magnifying it and adding in a new layer of noise.
+    resample_image(ViewImage, TileImage, tsViewport)
+    noise = gradient_noise(Resolution, tsViewport, InitialFrequency, seed=Zoom)
+    np.copyto(TileImage, 2 * (ViewImage + noise))
+    # Transform the intersection line to the new viewport.
+    vpextent = tsViewport[1] - tsViewport[0]
+    tsTargetLn[0] = (tsTargetLn[0] - tsViewport[0]) / vpextent
+    tsTargetLn[1] = (tsTargetLn[1] - tsViewport[0]) / vpextent
+    # Reset the viewport.
+    tsViewport[0] = vec2(0, 0)
+    tsViewport[1] = vec2(1, 1)
+    # Re-render the current view tile and adjust the target point.
+    Zoom = Zoom + 1
+    update_view() # TODO: optimization: don't do this twice
+
+    (x0, y0), (x1, y1) = tsTargetLn
+    x0, y0, x1, y1 = clipline(0, 0, 1, 1, x0, y0, x1, y1)
+    print("before clipping ", tsTargetLn[0], tsTargetLn[1])
+    print("after  clipping ", [(x0, y0), (x1, y1)])
+    tsTargetLn = [(x0, y0), (x1, y1)]
+    tsTargetPt = marching_line(ViewImage, tsTargetLn)
+
 def main():
     global tsTargetPt
     update_view()
     tsTargetPt = marching_line(ViewImage, tsTargetLn)
-    writer = imageio.get_writer('out.mp4', fps=30, quality=9)
+    writer = imageio.get_writer('out.mp4', fps=VideoFps, quality=9)
     for frame in tqdm(range(NumFrames)):
         update_view()
         rgb = render_view()
         writer.append_data(np.uint8(rgb))
         shrink_viewport(zoom_speed=10, pan_speed=0.05)
+        vpextent = tsViewport[1] - tsViewport[0]
+        if vpextent[0] < 0.5 and vpextent[1] < 0.5:
+            try:
+                increment_zoom()
+            except Exception as e:
+                print(e)
+                break
     writer.close()
 
 def render_view():
@@ -163,8 +198,7 @@ def marching_line(image_array, line_segment):
         val = sample_pixel(image_array, x, y)
         if np.sign(val) != sgn:
             return [x, y]
-    print('FAIL')
-    return [-1, -1]
+    raise Exception(f'Could not find in {x0:3.3},{y0:3.3} -- {x1:3.3},{y1:3.3}')
 
 # TODO: use NiceGradient
 def create_gradient():
