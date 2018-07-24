@@ -39,7 +39,7 @@ NumFrames = 60
 VideoFps = 10
 wsTargetLn = vec2([.5,.5], [.75,0])
 SeaLevel = 0.5
-NiceGradient = [
+NicePalette = [
     000, 0x001070 , # Dark Blue
     126, 0x2C5A7C , # Light Blue
     127, 0xE0F0A0 , # Yellow
@@ -81,14 +81,12 @@ def increment_zoom():
     # Reset the viewport.
     tsViewport[0] = vec2(0, 0)
     tsViewport[1] = vec2(1, 1)
-    # Re-render the current view tile and adjust the target point.
+    # Re-render the current view tile.
     Zoom = Zoom + 1
-    update_view() # TODO: optimization: don't do this twice
-
+    update_view()
+    # Clip the line segment of interest and recompute the target point.
     (x0, y0), (x1, y1) = tsTargetLn
     x0, y0, x1, y1 = clipline(0, 0, 1, 1, x0, y0, x1, y1)
-    print("before clipping ", tsTargetLn[0], tsTargetLn[1])
-    print("after  clipping ", [(x0, y0), (x1, y1)])
     tsTargetLn = [(x0, y0), (x1, y1)]
     tsTargetPt = marching_line(ViewImage, tsTargetLn)
 
@@ -200,8 +198,8 @@ def marching_line(image_array, line_segment):
             return [x, y]
     raise Exception(f'Could not find in {x0:3.3},{y0:3.3} -- {x1:3.3},{y1:3.3}')
 
-# TODO: use NiceGradient
-def create_gradient():
+# TODO: use NicePalette
+def create_palette():
     r = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(0.0,     0.0, num=128)])
     g = np.hstack([np.linspace(0.0,     0.0, num=128), np.linspace(128.0, 255.0, num=128)])
     b = np.hstack([np.linspace(128.0, 255.0, num=128), np.linspace(0.0,    64.0, num=128)])
@@ -229,6 +227,6 @@ def resample_image(dst, src, viewport):
     newimg = f(urange)
     np.copyto(dst, newimg)
 
-np.copyto(Lut, create_gradient())
+np.copyto(Lut, create_palette())
 np.copyto(TileImage, create_basetile(Width, Height))
 main()
