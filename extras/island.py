@@ -57,6 +57,7 @@ tsViewport = vec2((0,0), (1,1))
 tsTargetPt = vec2(-1,-1)
 ViewImage = grid(Width, Height) ## Current viewport. Includes NumOctaves of high-freq noise.
 TileImage = grid(Width, Height) ## Smallest encompassing tile (accumulated low-freq noise).
+Viewports = []
 
 def update_view():
     resample_image(ViewImage, TileImage, tsViewport)
@@ -99,7 +100,8 @@ def main():
         update_view()
         rgb = render_view()
         writer.append_data(np.uint8(rgb))
-        shrink_viewport(zoom_speed=10, pan_speed=0.05)
+        vp = shrink_viewport(tsViewport, zoom_speed=10, pan_speed=0.05)
+        np.copyto(tsViewport, vp)
         vpextent = tsViewport[1] - tsViewport[0]
         if vpextent[0] < 0.5 and vpextent[1] < 0.5:
             try:
@@ -121,14 +123,13 @@ def render_view():
     draw_overlay(L, vsTargetLn, vsTargetPt)
     return L
 
-def shrink_viewport(zoom_speed, pan_speed):
-    global tsViewport
-    vpextent = tsViewport[1] - tsViewport[0]
-    vsTargetPt = (tsTargetPt - tsViewport[0]) / vpextent
+def shrink_viewport(viewport, zoom_speed, pan_speed):
+    vpextent = viewport[1] - viewport[0]
+    vsTargetPt = (tsTargetPt - viewport[0]) / vpextent
     pandir = vsTargetPt - vec2(0.5, 0.5)
     pan_delta = pan_speed * pandir
     zoom_delta = zoom_speed * vpextent / Resolution
-    tsViewport += pan_delta + vec2(zoom_delta, -zoom_delta)
+    return viewport + pan_delta + vec2(zoom_delta, -zoom_delta)
 
 def draw_overlay(dst, lineseg, pxcoord):
     dims = [dst.shape[1], dst.shape[0]]
@@ -226,6 +227,10 @@ def resample_image(dst, src, viewport):
     f = interp.interp1d(domain[1], temp.T, kind='linear')
     newimg = f(urange)
     np.copyto(dst, newimg)
+
+for x in range(NumOctaves):
+    Viewports.append(vec2((0,0), (1,1)))
+Viewports.append(tsViewport)
 
 np.copyto(Lut, create_palette())
 np.copyto(TileImage, create_basetile(Width, Height))
