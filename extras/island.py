@@ -33,10 +33,10 @@ def grid(w, h): return np.zeros([int(h), int(w)], dtype=np.float)
 
 # Configuration.
 Resolution = vec2(512,512)
-InitialFrequency = 1.0
-NumOctaves = 4
-NumFrames = 60
-VideoFps = 10
+NoiseFrequency = 16.0
+NumLayers = 4
+VideoFps = 30
+NumFrames = VideoFps * 8
 wsTargetLn = vec2([.5,.5], [.75,0])
 SeaLevel = 0.5
 NicePalette = [
@@ -52,74 +52,72 @@ NicePalette = [
 Width, Height = Resolution
 Lut = grid(3, 256)
 Zoom = int(0)
-tsTargetLn = np.copy(wsTargetLn)
-tsViewport = vec2((0,0), (1,1))
+vsTargetLn = np.copy(wsTargetLn)
 tsTargetPt = vec2(-1,-1)
-ViewImage = grid(Width, Height) ## Current viewport. Includes NumOctaves of high-freq noise.
+ViewImage = grid(Width, Height) ## Current viewport. Includes NumLayers of high-freq noise.
 TileImage = grid(Width, Height) ## Smallest encompassing tile (accumulated low-freq noise).
 Viewports = []
 
-def update_view():
-    resample_image(ViewImage, TileImage, tsViewport)
-    frequency = InitialFrequency
-    for i in range(NumOctaves):
-        noise = gradient_noise(Resolution, tsViewport, frequency, seed=Zoom+i)
+def update_view(nlayers = NumLayers):
+    resample_image(ViewImage, TileImage, Viewports[-1])
+    seed = Zoom
+    for vp in Viewports[:nlayers]:
+        noise = gradient_noise(Resolution, vp, NoiseFrequency, seed=seed)
         np.copyto(ViewImage, 2 * (ViewImage + noise))
-        frequency *= 2
+        seed = seed + 1
 
-def increment_zoom():
+def update_tile():
     global Zoom
-    global tsTargetPt
-    global tsTargetLn
-    # Render a new base tile by magnifying it and adding in a new layer of noise.
-    resample_image(ViewImage, TileImage, tsViewport)
-    noise = gradient_noise(Resolution, tsViewport, InitialFrequency, seed=Zoom)
-    np.copyto(TileImage, 2 * (ViewImage + noise))
-    # Transform the intersection line to the new viewport.
-    vpextent = tsViewport[1] - tsViewport[0]
-    tsTargetLn[0] = (tsTargetLn[0] - tsViewport[0]) / vpextent
-    tsTargetLn[1] = (tsTargetLn[1] - tsViewport[0]) / vpextent
-    # Reset the viewport.
-    tsViewport[0] = vec2(0, 0)
-    tsViewport[1] = vec2(1, 1)
-    # Re-render the current view tile.
+    global Viewports
+    # Render a new base tile by adding one layer of noise.
+    update_view(1)
+    np.copyto(TileImage, ViewImage)
+    # Left-shift the viewports array, then re-render the current view tile.
+    Viewports = Viewports[1:] + [vec2((0,0),(1,1))]
     Zoom = Zoom + 1
-    update_view()
-    # Clip the line segment of interest and recompute the target point.
-    (x0, y0), (x1, y1) = tsTargetLn
-    x0, y0, x1, y1 = clipline(0, 0, 1, 1, x0, y0, x1, y1)
-    tsTargetLn = [(x0, y0), (x1, y1)]
-    tsTargetPt = marching_line(ViewImage, tsTargetLn)
 
 def main():
     global tsTargetPt
     update_view()
-    tsTargetPt = marching_line(ViewImage, tsTargetLn)
+    tsTargetPt = marching_line(ViewImage, vsTargetLn)
     writer = imageio.get_writer('out.mp4', fps=VideoFps, quality=9)
     for frame in tqdm(range(NumFrames)):
+
+        # Draw the heightmap for the current viewport.
         update_view()
+
+        # Recompute the point of interest.
+        tsTargetPt = marching_line(ViewImage, vsTargetLn)
+
+        # Draw the overlay and convert the heightmap into color.
         rgb = render_view()
         writer.append_data(np.uint8(rgb))
-        vp = shrink_viewport(tsViewport, zoom_speed=10, pan_speed=0.05)
-        np.copyto(tsViewport, vp)
-        vpextent = tsViewport[1] - tsViewport[0]
+
+        # Compute the pan / zoom adjustments for the largest viewport.
+        vpdelta = shrink_viewport(Viewports[-1], zoom_speed=10, pan_speed=0.05)
+
+        # Propagate the movement to all layer viewports.
+        for vp in reversed(Viewports):
+            np.copyto(vp, vp + vpdelta)
+            vpdelta = vpdelta / 2
+
+        # If the largest viewport is sufficiently small, it's time to increment zoom.
+        vp = Viewports[-1]
+        vpextent = vp[1] - vp[0]
         if vpextent[0] < 0.5 and vpextent[1] < 0.5:
-            try:
-                increment_zoom()
-            except Exception as e:
-                print(e)
-                break
+            update_tile()
+
     writer.close()
 
 def render_view():
+    # Apply the color palette to ViewImage.
     lo, hi = np.amin(ViewImage), np.amax(ViewImage)
     L = np.uint8(255 * (0.5 + 0.5 * ViewImage / (hi - lo)))
     L = Lut[L]
-    vpextent = tsViewport[1] - tsViewport[0]
-    vsTargetPt = (tsTargetPt - tsViewport[0]) / vpextent
-    vsTargetLn = [
-        (tsTargetLn[0] - tsViewport[0]) / vpextent ,
-        (tsTargetLn[1] - tsViewport[0]) / vpextent ]
+    # Find the "viewport space" coordinates for the overlay shapes.
+    vp = Viewports[-1]
+    vpextent = vp[1] - vp[0]
+    vsTargetPt = (tsTargetPt - vp[0]) / vpextent
     draw_overlay(L, vsTargetLn, vsTargetPt)
     return L
 
@@ -129,7 +127,7 @@ def shrink_viewport(viewport, zoom_speed, pan_speed):
     pandir = vsTargetPt - vec2(0.5, 0.5)
     pan_delta = pan_speed * pandir
     zoom_delta = zoom_speed * vpextent / Resolution
-    return viewport + pan_delta + vec2(zoom_delta, -zoom_delta)
+    return pan_delta + vec2(zoom_delta, -zoom_delta)
 
 def draw_overlay(dst, lineseg, pxcoord):
     dims = [dst.shape[1], dst.shape[0]]
@@ -138,12 +136,12 @@ def draw_overlay(dst, lineseg, pxcoord):
     ctx.scale(dims[0], dims[1])
     ctx.set_line_width(0.005)
     # Stroke a path along lineseg
-    ctx.set_source_rgba(1.0, 0.8, 0.8, 0.8)
+    ctx.set_source_rgba(1.0, 0.8, 0.8, 0.25)
     ctx.move_to(lineseg[0][0], lineseg[0][1])
     ctx.line_to(lineseg[1][0], lineseg[1][1])
     ctx.stroke()
     # Draw circle around pxcoord
-    ctx.set_source_rgba(1.0, 0.8, 0.8)
+    ctx.set_source_rgba(1.0, 0.8, 0.8, 1.0)
     ctx.save()
     ctx.translate(pxcoord[0], pxcoord[1])
     ctx.scale(0.02, 0.02)
@@ -174,7 +172,8 @@ def gradient_noise(dims, viewport, frequency, seed):
         left, -bottom, right, -top,
         frequency, seed)
     clumpy("gradient_noise " + args)
-    return np.load('gradient_noise.npy')
+    noise = np.load('gradient_noise.npy')
+    return noise
 
 def sample_pixel(image_array, x, y):
     rows, cols = image_array.shape
@@ -197,7 +196,8 @@ def marching_line(image_array, line_segment):
         val = sample_pixel(image_array, x, y)
         if np.sign(val) != sgn:
             return [x, y]
-    raise Exception(f'Could not find in {x0:3.3},{y0:3.3} -- {x1:3.3},{y1:3.3}')
+    print(f'Could not find in {x0:3.3},{y0:3.3} -- {x1:3.3},{y1:3.3}')
+    return [0.5,0.5]
 
 # TODO: use NicePalette
 def create_palette():
@@ -220,17 +220,20 @@ def resample_image(dst, src, viewport):
     height, width = dst.shape
     domain = [np.linspace(0, 1, num) for num in (width, height)]
     [(left, top), (right, bottom)] = viewport
-    urange = np.linspace(left, right, num=width)
-    vrange = np.linspace(top, bottom, num=height)
+    vrange = np.linspace(left, right, num=width)
+    urange = np.linspace(top, bottom, num=height)
     f = interp.interp1d(domain[0], src, kind='linear')
     temp = f(vrange)
     f = interp.interp1d(domain[1], temp.T, kind='linear')
-    newimg = f(urange)
+    newimg = f(urange).T
     np.copyto(dst, newimg)
 
-for x in range(NumOctaves):
-    Viewports.append(vec2((0,0), (1,1)))
-Viewports.append(tsViewport)
+# The largest viewport (highest frequency noise) is (0,0) - (1,1).
+frequency = 1
+for x in range(NumLayers):
+    vp = vec2((0,0), (frequency,frequency))
+    Viewports.insert(0, vp)
+    frequency = frequency / 2
 
 np.copyto(Lut, create_palette())
 np.copyto(TileImage, create_basetile(Width, Height))
