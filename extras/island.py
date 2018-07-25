@@ -108,8 +108,8 @@ def main():
     writer.close()
 
 def render_view():
-    lo, hi = np.amin(ViewImage), np.amax(ViewImage)
-    L = np.uint8(255 * (0.5 + 0.5 * ViewImage / (hi - lo)))
+    clamped = np.clip(0.5 + 0.01 * ViewImage, 0, 1)
+    L = np.uint8(255 * clamped)
     L = Lut[L]
     draw_overlay(L, vsTargetLn, vsTargetPt)
     return L
@@ -164,8 +164,7 @@ def gradient_noise(dims, viewport, frequency, seed):
         left, -bottom, right, -top,
         frequency, seed)
     clumpy("gradient_noise " + args)
-    noise = np.load('gradient_noise.npy')
-    return noise
+    return np.load('gradient_noise.npy')
 
 def sample_pixel(image_array, x, y):
     rows, cols = image_array.shape
