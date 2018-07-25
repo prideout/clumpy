@@ -109,10 +109,11 @@ def main():
 
 def render_view():
     lo, hi = np.amin(ViewImage), np.amax(ViewImage)
-    L = np.uint8(255 * (0.5 + 0.5 * ViewImage / (hi - lo)))
-    L = Lut[L]
-    draw_overlay(L, vsTargetLn, vsTargetPt)
-    return L
+    L1 = Lut[np.uint8(255 * (0.5 + 0.5 * ViewImage / (hi - lo)))]
+    draw_overlay(L1, vsTargetLn, vsTargetPt)
+    lo, hi = np.amin(TileImage), np.amax(TileImage)
+    L2 = Lut[np.uint8(255 * (0.5 + 0.5 * TileImage / (hi - lo)))]
+    return np.hstack([L1, L2])
 
 def shrink_viewport(viewport, zoom_speed, pan_speed):
     vpextent = viewport[1] - viewport[0]
@@ -128,12 +129,12 @@ def draw_overlay(dst, lineseg, pxcoord):
     ctx.scale(dims[0], dims[1])
     ctx.set_line_width(0.005)
     # Stroke a path along lineseg
-    ctx.set_source_rgba(1.0, 0.8, 0.8, 0.1)
+    ctx.set_source_rgba(1.0, 0.8, 0.8, 0.15)
     ctx.move_to(lineseg[0][0], lineseg[0][1])
     ctx.line_to(lineseg[1][0], lineseg[1][1])
     ctx.stroke()
     # Draw circle around pxcoord
-    ctx.set_source_rgba(1.0, 0.8, 0.8, 1.0)
+    ctx.set_source_rgba(1.0, 0.8, 0.8, 0.15)
     ctx.save()
     ctx.translate(pxcoord[0], pxcoord[1])
     ctx.scale(0.02, 0.02)
