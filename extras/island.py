@@ -3,18 +3,16 @@
 '''
 Creates a movie of infinitely zooming FBM.
 
-All coordinates are X,Y floats with values that increase rightward and downward.
-
-In contrast to this, numpy requires Row,Col integer coordinates, so we internalize those at the
-lowest level. (see sample_pixel)
-
-All coordinates live in one of these coordinate systems:
+All coordinates are X,Y floats with values that increase rightward and downward:
 
     World Space: [0,0 through 1,1] spans the entire island.
      Tile Space: [0,0 through 1,1] spans the smallest tile that wholly encompasses the viewport.
  Viewport Space: [0,0 through 1,1] spans the current view.
 
 At Z = 0, Tile Space is equivalent to World Space.
+
+Note that numpy requires Row,Col integer coordinates, but we internalize those at the lowest level.
+(see sample_pixel)
 
 '''
 
@@ -36,8 +34,9 @@ Resolution = vec2(512,512)
 NoiseFrequency = 16.0
 NumLayers = 4
 VideoFps = 30
-NumFrames = VideoFps * 8
-wsTargetLn = vec2([.5,.5], [.75,0])
+NumFrames = VideoFps * 10
+vsTargetLn = vec2([.5,.5], [.75,0])
+vsPanFocus = vec2(0.6, 0.4)
 SeaLevel = 0.5
 NicePalette = [
     000, 0x001070 , # Dark Blue
@@ -52,8 +51,7 @@ NicePalette = [
 Width, Height = Resolution
 Lut = grid(3, 256)
 Zoom = int(0)
-vsTargetLn = np.copy(wsTargetLn)
-tsTargetPt = vec2(-1,-1)
+vsTargetPt = vec2(-1,-1)
 ViewImage = grid(Width, Height) ## Current viewport. Includes NumLayers of high-freq noise.
 TileImage = grid(Width, Height) ## Smallest encompassing tile (accumulated low-freq noise).
 Viewports = []
@@ -72,14 +70,14 @@ def update_tile():
     # Render a new base tile by adding one layer of noise.
     update_view(1)
     np.copyto(TileImage, ViewImage)
-    # Left-shift the viewports array, then re-render the current view tile.
+    # Left-shift the viewports array and push on a new high-frequency layer.
     Viewports = Viewports[1:] + [vec2((0,0),(1,1))]
     Zoom = Zoom + 1
 
 def main():
-    global tsTargetPt
+    global vsTargetPt
     update_view()
-    tsTargetPt = marching_line(ViewImage, vsTargetLn)
+    vsTargetPt = marching_line(ViewImage, vsTargetLn)
     writer = imageio.get_writer('out.mp4', fps=VideoFps, quality=9)
     for frame in tqdm(range(NumFrames)):
 
@@ -87,7 +85,7 @@ def main():
         update_view()
 
         # Recompute the point of interest.
-        tsTargetPt = marching_line(ViewImage, vsTargetLn)
+        vsTargetPt = marching_line(ViewImage, vsTargetLn)
 
         # Draw the overlay and convert the heightmap into color.
         rgb = render_view()
@@ -110,21 +108,15 @@ def main():
     writer.close()
 
 def render_view():
-    # Apply the color palette to ViewImage.
     lo, hi = np.amin(ViewImage), np.amax(ViewImage)
     L = np.uint8(255 * (0.5 + 0.5 * ViewImage / (hi - lo)))
     L = Lut[L]
-    # Find the "viewport space" coordinates for the overlay shapes.
-    vp = Viewports[-1]
-    vpextent = vp[1] - vp[0]
-    vsTargetPt = (tsTargetPt - vp[0]) / vpextent
     draw_overlay(L, vsTargetLn, vsTargetPt)
     return L
 
 def shrink_viewport(viewport, zoom_speed, pan_speed):
     vpextent = viewport[1] - viewport[0]
-    vsTargetPt = (tsTargetPt - viewport[0]) / vpextent
-    pandir = vsTargetPt - vec2(0.5, 0.5)
+    pandir = vsTargetPt - vsPanFocus
     pan_delta = pan_speed * pandir
     zoom_delta = zoom_speed * vpextent / Resolution
     return pan_delta + vec2(zoom_delta, -zoom_delta)
@@ -136,7 +128,7 @@ def draw_overlay(dst, lineseg, pxcoord):
     ctx.scale(dims[0], dims[1])
     ctx.set_line_width(0.005)
     # Stroke a path along lineseg
-    ctx.set_source_rgba(1.0, 0.8, 0.8, 0.25)
+    ctx.set_source_rgba(1.0, 0.8, 0.8, 0.1)
     ctx.move_to(lineseg[0][0], lineseg[0][1])
     ctx.line_to(lineseg[1][0], lineseg[1][1])
     ctx.stroke()
