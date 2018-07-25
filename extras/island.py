@@ -31,8 +31,6 @@ def grid(w, h): return np.zeros([int(h), int(w)], dtype=np.float)
 
 # Configuration.
 Resolution = vec2(512,512)
-NoiseFrequency = 16.0
-NumLayers = 4
 VideoFps = 30
 NumFrames = VideoFps * 10
 vsTargetLn = vec2([.5,.5], [.75,0])
@@ -48,6 +46,8 @@ NicePalette = [
     255, 0xFFFFFF ] # White
 
 # Global data.
+NoiseFrequency = 16.0
+NumLayers = 4
 Width, Height = Resolution
 Lut = grid(3, 256)
 Zoom = int(0)
@@ -76,6 +76,15 @@ def update_tile():
 
 def main():
     global vsTargetPt
+    global NoiseFrequency
+    global NumLayers
+
+    NoiseFrequency = 16.0
+    NumLayers = 4
+    create_viewports()
+    np.copyto(Lut, create_palette())
+    np.copyto(TileImage, create_basetile(Width, Height))
+
     update_view()
     vsTargetPt = marching_line(ViewImage, vsTargetLn)
     writer = imageio.get_writer('out.mp4', fps=VideoFps, quality=9)
@@ -221,13 +230,13 @@ def resample_image(dst, src, viewport):
     newimg = f(urange).T
     np.copyto(dst, newimg)
 
-# The largest viewport (highest frequency noise) is (0,0) - (1,1).
-frequency = 1
-for x in range(NumLayers):
-    vp = vec2((0,0), (frequency,frequency))
-    Viewports.insert(0, vp)
-    frequency = frequency / 2
+def create_viewports():
+    global Viewports
+    Viewports = []
+    frequency = 1
+    for x in range(NumLayers):
+        vp = vec2((0,0), (frequency,frequency))
+        Viewports.insert(0, vp)
+        frequency = frequency / 2
 
-np.copyto(Lut, create_palette())
-np.copyto(TileImage, create_basetile(Width, Height))
 main()
