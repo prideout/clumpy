@@ -32,7 +32,7 @@ def grid(w, h): return np.zeros([int(h), int(w)], dtype=np.float)
 # Configuration.
 Resolution = vec2(512,512)
 VideoFps = 30
-NumFrames = VideoFps * 30
+NumFrames = VideoFps * 5
 vsTargetLn = vec2([.4,.4], [.9,.9])
 vsPanFocus = vec2(0.5, 0.5)
 SeaLevel = 0.5
@@ -67,12 +67,14 @@ def update_view(nlayers = NumLayers):
 def update_tile():
     global Zoom
     global Viewports
+    global NoiseFrequency
     # Render a new base tile by adding one layer of noise.
     update_view(1)
     np.copyto(TileImage, ViewImage)
     # Left-shift the viewports array and push on a new high-frequency layer.
     Viewports = Viewports[1:] + [vec2((0,0),(1,1))]
     Zoom = Zoom + 1
+    NoiseFrequency = min(NoiseFrequency * 1.5, 512.0)
 
 def main():
     global vsTargetPt
@@ -87,7 +89,6 @@ def main():
 
     update_view()
     np.copyto(TileImage, ViewImage)
-    NoiseFrequency = 64.0
     NumLayers = 1
     create_viewports()
 
@@ -128,6 +129,11 @@ def render_view():
     draw_overlay(L1, vsTargetLn, vsTargetPt)
     lo, hi = np.amin(TileImage), np.amax(TileImage)
     L2 = Lut[np.uint8(255 * (0.5 + 0.5 * TileImage / (hi - lo)))]
+    # Crop so that the stack is roughly 1920x1080
+    crop = Width - Width * 960/1080
+    w0, w1 = int(crop/2), int(Width - crop/2)
+    L1 = L1[:, w0:w1, :]
+    L2 = L2[:, w0:w1, :]
     return np.hstack([L1, L2])
 
 def shrink_viewport(viewport, zoom_speed, pan_speed):
@@ -230,9 +236,9 @@ def resample_image(dst, src, viewport):
     [(left, top), (right, bottom)] = viewport
     vrange = np.linspace(left, right, num=width)
     urange = np.linspace(top, bottom, num=height)
-    f = interp.interp1d(domain[0], src, kind='linear')
+    f = interp.interp1d(domain[0], src, kind='linear', fill_value='extrapolate')
     temp = f(vrange)
-    f = interp.interp1d(domain[1], temp.T, kind='linear')
+    f = interp.interp1d(domain[1], temp.T, kind='linear', fill_value='extrapolate')
     newimg = f(urange).T
     np.copyto(dst, newimg)
 
