@@ -32,9 +32,9 @@ def grid(w, h): return np.zeros([int(h), int(w)], dtype=np.float)
 # Configuration.
 Resolution = vec2(512,512)
 VideoFps = 30
-NumFrames = VideoFps * 10
-vsTargetLn = vec2([.5,.5], [.75,0])
-vsPanFocus = vec2(0.6, 0.4)
+NumFrames = VideoFps * 30
+vsTargetLn = vec2([.4,.4], [.9,.9])
+vsPanFocus = vec2(0.5, 0.5)
 SeaLevel = 0.5
 NicePalette = [
     000, 0x001070 , # Dark Blue
@@ -84,6 +84,12 @@ def main():
     create_viewports()
     np.copyto(Lut, create_palette())
     np.copyto(TileImage, create_basetile(Width, Height))
+
+    update_view()
+    np.copyto(TileImage, ViewImage)
+    NoiseFrequency = 64.0
+    NumLayers = 1
+    create_viewports()
 
     update_view()
     vsTargetPt = marching_line(ViewImage, vsTargetLn)
