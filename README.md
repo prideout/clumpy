@@ -2,7 +2,7 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/prideout/clumpy/blob/master/LICENSE)
 
 This tool can manipulate or generate large swaths of image data stored in [numpy
-files](https://docs.scipy.org/doc/numpy/neps/npy-format.html). It's a sandbox for implementing
+files](https://docs.scipy.org/doc/numpy-1.13.0/neps/npy-format.html). It's a sandbox for implementing
 operations in C++ that are either slow or non-existent in [pillow](https://python-pillow.org/),
 [scikit-image](http://scikit-image.org/), or the [SciPy](https://www.scipy.org/) ecosystem.
 
