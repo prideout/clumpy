@@ -10,9 +10,10 @@ Since it's just a command line tool, it doesn't contain any
 [FFI](https://en.wikipedia.org/wiki/Foreign_function_interface) messiness. Feel free to contribute
 by adding your own command, but keep it simple! Add a `cc` file and make a pull request.
 
-This is just a toy library. For serious applications you might want to look at
+This is just a toy library. For serious C++ applications you might want to look at
 [xtensor](https://github.com/QuantStack/xtensor) (which can read / write npy files) and
-[xtensor-io](https://github.com/QuantStack/xtensor-io).
+[xtensor-io](https://github.com/QuantStack/xtensor-io). To achieve huge speed-ups with numpy, see
+[numba](https://numba.pydata.org/).
 
 ---
 
