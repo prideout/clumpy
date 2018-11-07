@@ -59,7 +59,7 @@ Create a 2x2 atlas of distance fields, each with 5 random shapes.
 
     for i in {1..4}; do clumpy generate_dshapes 250x125 5 $i shapes$i.npy; done
     for i in {1..4}; do clumpy visualize_sdf shapes$i.npy shapes$i.npy; done
-    
+
     python <<EOL
     import numpy as np; from PIL import Image
     a, b, c, d = (np.load('shapes{}.npy'.format(i)) for i in [1,2,3,4])
@@ -116,7 +116,10 @@ Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).show()
 
 TODO
 
-Heman examples, then Deprecate Heman (add to README, then "Archive")
+find_contours <input_img> <output_svg>
+    https://github.com/BlockoS/blob/blob/master/blob.h#L127
+    https://github.com/adishavit/simple-svg/blob/master/main_1.0.0.cpp#L35
+    http://katlas.org/wiki/The_Rolfsen_Knot_Table_Mosaic
 
 cnpy.h should be abstracted out into a base class methods for save and load.
 
@@ -149,13 +152,6 @@ grayscale island waves sequence
 
 lighting / AO...  make the streamlines look like 3D tadpoles?
 
-find_contours <input_img> <output_svg>
-    https://github.com/adishavit/simple-svg
-    * int find_blobs( int16_t roi_x, int16_t roi_y, int16_t roi_w, int16_t roi_h,
-    *                 uint8_t *in, int16_t in_w, int16_t in_h, 
-    *                 label_t **label, int16_t *label_w, int16_t *label_h, 
-    *                 blob_t** blobs, int *count, int extract_internal );
-
 "Import a bitmap, generate a distance field from it, add noise, and export."
 
 variable_blur
@@ -165,5 +161,5 @@ gradient_magnitude (similar to curl2d)
     https://docs.scipy.org/doc/numpy/reference/routines.math.html
 
 https://blind.guru/simple_cxx11_workqueue.html
-    
+
 -->
