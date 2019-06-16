@@ -10,12 +10,16 @@ def clumpy(cmd):
     result = system('.release/clumpy ' + cmd)
     if result: raise Exception("clumpy failed with: " + cmd)
 
-clumpy('simulate_pendulum 500x500 0.01 field.npy')
-clumpy('bridson_points 500x500 5 0 pts.npy')
-
+friction = 1
+step_size = 0.1
+kernel_size = 1
+decay = 1.0
 nframes = 240
 
-clumpy(f'advect_points pts.npy field.npy 30 1 0.95 {nframes} anim.npy')
+clumpy(f'simulate_pendulum 500x500 {friction} field.npy')
+clumpy('bridson_points 500x500 5 0 pts.npy')
+clumpy('advect_points pts.npy field.npy ' +
+    f'{step_size} {kernel_size} {decay} {nframes} anim.npy')
 
 import imageio
 writer = imageio.get_writer('anim.mp4', fps=60)

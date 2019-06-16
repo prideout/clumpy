@@ -47,12 +47,20 @@ bool SimulatePendulum::exec(vector<string> vargs) {
     const uint32_t width = atoi(dims.c_str());
     const uint32_t height = atoi(dims.substr(dims.find('x') + 1).c_str());
 
+    const float g = 1.0f;
+    const float L = 1.0f;
+    const vec2 graph_scale(20, 5);
+
     vector<vec2> dstimg(width * height);
     for (uint32_t row = 0; row < width; ++row) {
         for (uint32_t col = 0; col < height; ++col) {
-            const float x = float(col) / width;
-            const float y = float(row) / height;
-            // ...
+            const float x = graph_scale.x * (float(col) / width - 0.5);
+            const float y = graph_scale.y * (float(row) / height - 0.5);
+            const float theta = x;
+            const float omega = y;
+            const float omega_dot = friction * omega - g / L * sin(theta);
+            dstimg[row * width + col].x = omega;
+            dstimg[row * width + col].y = omega_dot;
         }
     }
 
