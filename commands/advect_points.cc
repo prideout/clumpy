@@ -83,7 +83,6 @@ bool AdvectPoints::exec(vector<string> vargs) {
         .count = (uint32_t) arr.shape[0],
         .coords = arr.data<vec2>()
     };
-
     cnpy::NpyArray img = cnpy::npy_load(velocities_img);
     if (img.shape.size() != 3 || img.shape[2] != 2) {
         fmt::print("Velocities have wrong shape.\n");

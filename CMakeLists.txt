@@ -30,11 +30,21 @@ set(CMDS
   commands/test_clumpy.cc
   commands/visualize_sdf.cc)
 
-find_package(CGAL)
+find_package(CGAL QUIET)
+if (CGAL_FOUND)
+    message("Found CGAL in ${CGAL_DIR}")
+    set(CMDS ${CMDS} commands/cgal_streamlines.cc)
+    link_directories(${CGAL_LIBRARIES_DIR})
+    include_directories(${CGAL_INCLUDE_DIRS})
+    link_libraries(${CGAL_LIB} gmp)
+endif()
 
-if (CGAL_VERSION)
-  set(CMDS ${CMDS} commands/cgal_streamlines.cc)
-  link_libraries(cgal gmp)
+find_package(embree 3.0 QUIET PATHS /usr/lib64/cmake)
+if (embree_FOUND)
+    message("Found embree in ${embree_DIR}")
+    set(CMDS ${CMDS} commands/simulate_pendulum.cc)
+    include_directories(${EMBREE_INCLUDE_DIRS})
+    link_libraries(${EMBREE_LIBRARIES} tbb)
 endif()
 
 add_executable(clumpy
