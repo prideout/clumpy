@@ -112,6 +112,16 @@ Image.fromarray(load("000anim.npy"), "L").point(lambda p: p * 2).show()
 
 <img src="https://github.com/prideout/clumpy/raw/master/extras/example5.png">
 
+---
+
+Create a visualization of pendulum's phase space.
+
+    clumpy pendulum_phase 4000x2000 0.9 2 5 field.npy
+    clumpy bridson_points 4000x2000 20 0 pts.npy
+    clumpy advect_points pts.npy field.npy 2.5 5 0.99 400 phase.npy
+
+<img src="https://github.com/prideout/clumpy/raw/master/extras/example6.png">
+
 <!--
 
 TODO

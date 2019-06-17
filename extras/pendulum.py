@@ -21,7 +21,7 @@ res = 2000, 2000
 dim = 'x'.join(map(str,res))
 
 friction = 0.1
-clumpy(f'pendulum_phase field {dim} {friction} field.npy')
+clumpy(f'pendulum_phase {dim} {friction} 1 5 field.npy')
 clumpy(f'bridson_points {dim} {spacing} 0 pts.npy')
 clumpy('advect_points pts.npy field.npy ' +
     f'{step_size} {kernel_size} {decay} {nframes} anim1.npy')

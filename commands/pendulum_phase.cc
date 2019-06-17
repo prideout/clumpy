@@ -27,10 +27,10 @@ struct PendulumPhase : ClumpyCommand {
         return "generate a θ-ω field of 2D vectors";
     }
     string usage() const override {
-        return "<image_type> <dims> <friction> <output_img>";
+        return "<image_type> <dims> <friction> <scale_x> <scale_y> <output_img>";
     }
     string example() const override {
-        return "field 500x500 0.01 field.npy";
+        return "500x500 0.01 1.0 5.0 field.npy";
     }
 };
 
@@ -39,30 +39,21 @@ static ClumpyCommand::Register registrar("pendulum_phase", [] {
 });
 
 bool PendulumPhase::exec(vector<string> vargs) {
-    if (vargs.size() != 4) {
-        fmt::print("The command takes 4 arguments.\n");
+    if (vargs.size() != 5) {
+        fmt::print("The command takes 5 arguments.\n");
         return false;
     }
-    const string image_typestring = vargs[0];
-    const string dims = vargs[1];
-    const float friction = atof(vargs[2].c_str());
-    const string output_file = vargs[3];
+    const string dims = vargs[0];
+    const float friction = atof(vargs[1].c_str());
+    const float scalex = atof(vargs[2].c_str());
+    const float scaley = atof(vargs[3].c_str());
+    const string output_file = vargs[4];
     const uint32_t width = atoi(dims.c_str());
     const uint32_t height = atoi(dims.substr(dims.find('x') + 1).c_str());
 
-    ImageType image_type;
-    if (image_typestring == "pendulum") {
-        image_type = pendulum;
-    } else if (image_typestring == "field") {
-        image_type = field;
-    } else {
-        fmt::print("Image type must be 'pendulum' or 'field'.\n");
-        return false;
-    }
-
     const float g = 1.0f;
     const float L = 1.0f;
-    const vec2 graph_scale(M_PI / 0.5, 5);
+    const vec2 graph_scale(scalex * M_PI / 0.5, scaley * 1);
 
     vector<vec2> dstimg(width * height);
     for (uint32_t row = 0; row < height; ++row) {
