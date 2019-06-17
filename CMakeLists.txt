@@ -26,6 +26,7 @@ set(CMDS
   commands/generate_dshapes.cc
   commands/generate_simplex.cc
   commands/gradient_noise.cc
+  commands/pendulum_phase.cc
   commands/splat_points.cc
   commands/test_clumpy.cc
   commands/visualize_sdf.cc)
@@ -42,7 +43,7 @@ endif()
 find_package(embree 3.0 QUIET PATHS /usr/lib64/cmake)
 if (embree_FOUND)
     message("Found embree in ${embree_DIR}")
-    set(CMDS ${CMDS} commands/simulate_pendulum.cc)
+    set(CMDS ${CMDS} commands/test_embree.cc)
     include_directories(${EMBREE_INCLUDE_DIRS})
     link_libraries(${EMBREE_LIBRARIES} tbb)
 endif()

@@ -20,8 +20,8 @@ namespace {
 
 enum ImageType { pendulum, field };
 
-struct SimulatePendulum : ClumpyCommand {
-    SimulatePendulum() {}
+struct PendulumPhase : ClumpyCommand {
+    PendulumPhase() {}
     bool exec(vector<string> args) override;
     string description() const override {
         return "generate a θ-ω field of 2D vectors";
@@ -34,11 +34,11 @@ struct SimulatePendulum : ClumpyCommand {
     }
 };
 
-static ClumpyCommand::Register registrar("simulate_pendulum", [] {
-    return new SimulatePendulum();
+static ClumpyCommand::Register registrar("pendulum_phase", [] {
+    return new PendulumPhase();
 });
 
-bool SimulatePendulum::exec(vector<string> vargs) {
+bool PendulumPhase::exec(vector<string> vargs) {
     if (vargs.size() != 4) {
         fmt::print("The command takes 4 arguments.\n");
         return false;
