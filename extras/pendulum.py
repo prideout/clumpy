@@ -12,11 +12,11 @@ def clumpy(cmd):
     if result: raise Exception("clumpy failed with: " + cmd)
 
 spacing = 20
-step_size = 0.5
-skip = 5
+step_size = 2.5
+skip = 2
 kernel_size = 5
-decay = -0.99
-nframes = 500
+decay = 0.99
+nframes = 240
 res = 2000, 2000
 dim = 'x'.join(map(str,res))
 
@@ -37,12 +37,12 @@ writer = imageio.get_writer('anim.mp4', fps=60)
 for i in tqdm(range(0, nframes, skip)):
 
     im1 = snowy.reshape(np.load("{:03}anim1.npy".format(i)))
-    im1 = snowy.resize(im1, 512, 512)
+    im1 = snowy.resize(im1, 256, 256)
 
     im2 = snowy.reshape(np.load("{:03}anim2.npy".format(i)))
-    im2 = snowy.resize(im2, 512, 512)
+    im2 = snowy.resize(im2, 256, 256)
 
-    im = np.uint8(snowy.hstack([im1, im2], border_width=4))
+    im = np.uint8(255.0 - snowy.hstack([im1, im2], border_width=4))
     writer.append_data(im)
 
 writer.close()
