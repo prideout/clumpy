@@ -17,6 +17,8 @@ void splat_points(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dsti
 void splat_disks(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstimg, float alpha,
         int kernel_size);
 
+bool advect_wrapx = false;
+
 namespace {
 
 enum KernelType { u8disk, fp32sphere };
@@ -143,10 +145,14 @@ void splat_disks(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstim
         float const* spriteval = &sprite[0];
         for (int32_t y0 = y - h; y0 <= y + h; ++y0) {
         for (int32_t x0 = x - h; x0 <= x + h; ++x0) {
-            if (x0 >= 0 && y0 >= 0 && x0 < width && y0 < height) {
+            int32_t xx = x0;
+            if (advect_wrapx) {
+                xx = (width + (x0 % width)) % width;
+            }
+            if (xx >= 0 && y0 >= 0 && xx < width && y0 < height) {
                 float alpha = *spriteval;
-                uint32_t dst = dstimg[width * y0 + x0];
-                dstimg[width * y0 + x0] = (uint8_t) ((1.0f - alpha) * dst + alpha * 255.0f);
+                uint32_t dst = dstimg[width * y0 + xx];
+                dstimg[width * y0 + xx] = (uint8_t) ((1.0f - alpha) * dst + alpha * 255.0f);
             }
             ++spriteval;
         }

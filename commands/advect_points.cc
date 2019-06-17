@@ -16,6 +16,8 @@ void splat_points(vec2 const* ptlist, uint32_t npts, u32vec2 size, uint8_t* dsti
 void splat_disks(vec2 const* ptlist, uint32_t npts, u32vec2 dims, uint8_t* dstimg, float alpha,
         int kernel_size);
 
+extern bool advect_wrapx;
+
 namespace {
 
 struct Image {
@@ -23,6 +25,9 @@ struct Image {
     uint32_t width;
     vec2 const* pixels;
     vec2 texel_fetch(uint32_t x, uint32_t y) const {
+        if (advect_wrapx) {
+            x = (width + (x % width)) % width;
+        }
         return (x >= width || y >= height) ? vec2(0) : pixels[x + width * y];
     }
     // TODO: bilinear interpolation with 3 mixes and 4 fetches. Might want to test it separately.
@@ -66,9 +71,14 @@ bool AdvectPoints::exec(vector<string> vargs) {
     const string velocities_img = vargs[1];
     const float step_size = atof(vargs[2].c_str());
     const int kernel_size = atoi(vargs[3].c_str());
-    const float decay = atof(vargs[4].c_str());
+    float decay = atof(vargs[4].c_str());
     const uint32_t nframes = atoi(vargs[5].c_str());
     const string suffix = vargs[6];
+
+    if (decay < 0) {
+        advect_wrapx = true;
+        decay = -decay;
+    }
 
     cnpy::NpyArray arr = cnpy::npy_load(input_pts);
     if (arr.shape.size() != 2 || arr.shape[1] != 2) {
