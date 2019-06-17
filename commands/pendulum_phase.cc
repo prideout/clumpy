@@ -5,9 +5,6 @@
 #include <glm/vec2.hpp>
 #include <glm/ext.hpp>
 
-#include <embree3/rtcore.h>
-#include <embree3/rtcore_ray.h>
-
 #include <limits>
 
 using namespace glm;
