@@ -20,8 +20,8 @@ namespace {
 
 enum ImageType { pendulum, field };
 
-struct SimulatePendulum : ClumpyCommand {
-    SimulatePendulum() {}
+struct TestEmbree : ClumpyCommand {
+    TestEmbree() {}
     bool exec(vector<string> args) override;
     string description() const override {
         return "generate a θ-ω field of 2D vectors";
@@ -35,10 +35,10 @@ struct SimulatePendulum : ClumpyCommand {
 };
 
 static ClumpyCommand::Register registrar("test_embree", [] {
-    return new SimulatePendulum();
+    return new TestEmbree();
 });
 
-bool SimulatePendulum::exec(vector<string> vargs) {
+bool TestEmbree::exec(vector<string> vargs) {
     if (vargs.size() != 4) {
         fmt::print("The command takes 4 arguments.\n");
         return false;
@@ -76,6 +76,13 @@ bool SimulatePendulum::exec(vector<string> vargs) {
             dstimg[row * width + col].y = omega_dot;
         }
     }
+
+    RTCDevice device = rtcNewDevice(nullptr);
+    RTCScene scene = rtcNewScene(device);
+    // TODO...
+    rtcCommitScene(scene);
+    rtcReleaseScene(scene);
+    rtcReleaseDevice(device);
 
     cnpy::npy_save(output_file, &dstimg.data()->x, {height, width, 2}, "w");
 

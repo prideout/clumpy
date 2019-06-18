@@ -8,15 +8,14 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+set(ASMJIT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/asmjit")
+
+set(CMAKE_CXX_STANDARD 14)
+
+add_subdirectory(extern/blend2d)
 add_subdirectory(extern/blob)
 add_subdirectory(extern/cnpy)
 add_subdirectory(extern/fmt)
-add_subdirectory(extern/svg)
-
-set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
-
-include_directories(extern extern/glm .)
-link_libraries(fmt cnpy)
 
 set(CMDS
   commands/advect_points.cc
@@ -27,6 +26,7 @@ set(CMDS
   commands/generate_simplex.cc
   commands/gradient_noise.cc
   commands/pendulum_phase.cc
+  commands/pendulum_render.cc
   commands/splat_points.cc
   commands/test_clumpy.cc
   commands/visualize_sdf.cc)
@@ -41,7 +41,7 @@ if (CGAL_FOUND)
 endif()
 
 find_package(embree 3.0 QUIET PATHS /usr/lib64/cmake)
-if (embree_FOUND)
+if (embree_FOUND AND !LINUX)
     message("Found embree in ${embree_DIR}")
     set(CMDS ${CMDS} commands/test_embree.cc)
     include_directories(${EMBREE_INCLUDE_DIRS})
@@ -52,4 +52,6 @@ add_executable(clumpy
   ${CMDS}
   clumpy_command.hh
   main_clumpy.cc)
-  
+
+target_include_directories(clumpy PRIVATE extern extern/blend2d/src extern/glm .)
+target_link_libraries(clumpy blend2d fmt cnpy)

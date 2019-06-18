@@ -7,8 +7,15 @@ operations in C++ that are either slow or non-existent in [pillow](https://pytho
 [scikit-image](http://scikit-image.org/), or the [SciPy](https://www.scipy.org/) ecosystem.
 
 Since it's just a command line tool, it doesn't contain any
-[FFI](https://en.wikipedia.org/wiki/Foreign_function_interface) messiness. Feel free to contribute
-by adding your own command, but keep it simple! Add a `cc` file and make a pull request.
+[FFI](https://en.wikipedia.org/wiki/Foreign_function_interface) messiness.
+
+Each command is implemented with a single C++ class that descends from `ClumpyCommand`. Feel free to
+contribute as follows:
+
+1. Think of a two-word name for your command like "eat rutabaga".
+2. Define `struct EatRutabaga : ClumpyCommand` in `commands/eat_rutabaga.cc`.
+3. Add `eat_rutabaga.cc` to the top-level CMakeLists.
+4. Make a pull request.
 
 This is just a toy library. For serious C++ applications you might want to look at
 [xtensor](https://github.com/QuantStack/xtensor) (which can read / write npy files) and
