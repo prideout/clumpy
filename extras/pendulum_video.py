@@ -5,9 +5,10 @@ from os import system
 import snowy
 from tqdm import tqdm
 
+result = system("cmake --build .release")
+if result: raise Exception("build failed")
+
 def clumpy(cmd):
-    result = system("cmake --build .release")
-    if result: raise Exception("build failed")
     result = system(".release/clumpy " + cmd)
     if result: raise Exception("clumpy failed with: " + cmd)
 
@@ -44,9 +45,11 @@ else:
 
         im1 = snowy.reshape(np.load("{:03}field1.npy".format(i)))
         im1 = 255.0 - 0.5 * snowy.resize(im1, 256, 256)
+        im1 = snowy.blur(im1, radius=4)
 
         im2 = snowy.reshape(np.load("{:03}field2.npy".format(i)))
         im2 = 255.0 - 0.5 * snowy.resize(im2, 256, 256)
+        im2 = snowy.blur(im2, radius=4)
 
         im = np.uint8(snowy.hstack([im1, im2], border_width=4))
         writer.append_data(im)

@@ -1,3 +1,10 @@
+#define PAR_SHAPES_T uint32_t
+#define PAR_SHAPES_IMPLEMENTATION
+#include "par/par_shapes.h"
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb/stb_truetype.h"
+
 #include "clumpy_command.hh"
 #include "fmt/core.h"
 

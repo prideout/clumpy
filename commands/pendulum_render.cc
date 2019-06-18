@@ -1,3 +1,9 @@
+// TODO: should I be using blend2d instead?
+
+#define PAR_SHAPES_T uint32_t
+#include "par/par_shapes.h"
+#include "stb/stb_truetype.h"
+
 #include "clumpy_command.hh"
 #include "fmt/core.h"
 #include "cnpy/cnpy.h"
@@ -36,6 +42,14 @@ static ClumpyCommand::Register registrar("pendulum_render", [] {
     return new PendulumRender();
 });
 
+static void addFloorGeometry(RTCScene scene, RTCDevice device) {
+
+}
+
+static void addSphereGeometry(RTCScene scene, RTCDevice device) {
+    
+}
+
 bool PendulumRender::exec(vector<string> vargs) {
     if (vargs.size() != 3) {
         fmt::print("The command takes 3 arguments.\n");
@@ -49,7 +63,14 @@ bool PendulumRender::exec(vector<string> vargs) {
 
     vector<vec3> dstimg(output_width * output_height);
 
+    RTCDevice device = rtcNewDevice(nullptr);
+    RTCScene scene = rtcNewScene(device);
+    addFloorGeometry(scene, device);
+    addSphereGeometry(scene, device);
+    rtcCommitScene(scene);
     // TODO
+    rtcReleaseScene(scene);
+    rtcReleaseDevice(device);
 
     cnpy::npy_save(output_file, &dstimg.data()->x, {output_height, output_width, 3}, "w");
     return true;
