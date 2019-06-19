@@ -97,12 +97,15 @@ void PendulumRender::drawLeftPanel(BLImage* img) {
 
 void PendulumRender::drawRightPanel(BLImage* img) {
     const int nframes = 200;
-    const float mindist = 20;
+    const float mindist = 15;
     const float step_size = 2.5;
     const float decay = 0.99;
     const float width = img->width();
     const float height = img->height();
     const float g = 1, L = 1;
+    const float maxLength = 100;
+    const float paddingx = img->width() / 10;
+    const float paddingy = img->height() / 10;
 
     auto getFieldVector = [=](vec2 v) {
         const float x = scalex * (v.x / width - 0.5);
@@ -122,7 +125,7 @@ void PendulumRender::drawRightPanel(BLImage* img) {
     };
 
     vector<float> points2d;
-    generate_pts(img->width(), img->height(), mindist, 4421, points2d);
+    generate_pts(img->width() + paddingx * 2, img->height() + paddingy * 2, mindist, 4421, points2d);
     const size_t npts = points2d.size() / 2;
 
     vector<uint32_t> age_offset(npts);
@@ -132,6 +135,8 @@ void PendulumRender::drawRightPanel(BLImage* img) {
         std::uniform_int_distribution<> get_age_offset(0, nframes - 1);
         for (uint32_t i = 0; i < npts; ++i) {
             age_offset[i] = get_age_offset(generator);
+            points2d[i * 2] -= paddingx;
+            points2d[i * 2 + 1] -= paddingy;
         }
     }
 
@@ -190,9 +195,15 @@ void PendulumRender::drawRightPanel(BLImage* img) {
 
         vec2& pt = advected_points[i];
         streamlines.moveTo(pt.x, pt.y);
+        float length = 0;
 
         for (simframe = nframes; simframe < nframes * 2; ++simframe) {
-            pt += step_size * getFieldVector(pt);
+            vec2 del = step_size * getFieldVector(pt);
+            length += del.length();
+            if (length >= maxLength) {
+                break;
+            }
+            pt += del;
             streamlines.lineTo(pt.x, pt.y);
             particle_age[i]++;
             if (particle_age[i] >= nframes) {
@@ -205,6 +216,21 @@ void PendulumRender::drawRightPanel(BLImage* img) {
         ctx.strokePath(streamlines);
     }
     puts("");
+
+    BLFontFace face;
+    face.createFromFile("extras/NotoSans-Regular.ttf");
+    BLFont font;
+    font.createFromFace(face, 40.0f);
+
+    ctx.setFillStyle(BLRgba32(0xf0000000));
+    ctx.setStrokeStyle(BLRgba32(0xf0000000));
+    ctx.setStrokeWidth(2);
+
+    ctx.fillUtf8Text  (BLPoint(10 + img->width() / 2, 50), font, "θ'");
+    ctx.strokeUtf8Text(BLPoint(10 + img->width() / 2, 50), font, "θ'");
+
+    ctx.fillUtf8Text  (BLPoint(img->width() - 40, 40 + img->height() / 2), font, "θ");
+    ctx.strokeUtf8Text(BLPoint(img->width() - 40, 40 + img->height() / 2), font, "θ");
 
     ctx.end();
 }

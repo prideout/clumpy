@@ -22,9 +22,13 @@ res = 1024, 1024
 dim = 'x'.join(map(str,res))
 
 friction = 0.1
-clumpy(f'pendulum_render {dim} {friction} 20 20 render.npy')
+clumpy(f'pendulum_render {dim} {friction} 20 5 render.npy')
 im = snowy.reshape(np.load("render.npy"))
 snowy.export(im, "render.png")
+
+# https://developer.twitter.com/en/docs/media/upload-media/uploading-media/media-best-practices.html
+# < 512 MB,1280x720, bitrate=2048K
+# H264 High Profile
 
 if False:
     clumpy(f'pendulum_phase {dim} {friction} 1 5 field.npy')
