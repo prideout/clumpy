@@ -24,30 +24,21 @@ struct PendulumRender : ClumpyCommand {
         return "";
     }
     string usage() const override {
-        return "<phase_npy> <output_dim> <output_img>";
+        return "<image_type> <dims> <friction> <scale_x> <scale_y> <output_img>";
     }
     string example() const override {
-        return "phase.npy 500x500 render.npy";
+        return "500x500 0.01 1.0 5.0 field.npy";
     }
+    void drawLeftPanel(BLImage* dst);
+    void drawRightPanel(BLImage* dst);
 };
 
 static ClumpyCommand::Register registrar("pendulum_render", [] {
     return new PendulumRender();
 });
 
-bool PendulumRender::exec(vector<string> vargs) {
-    if (vargs.size() != 3) {
-        fmt::print("The command takes 3 arguments.\n");
-        return false;
-    }
-    const string phase_file = vargs[0];
-    const string output_dims = vargs[1];
-    const string output_file = vargs[2];
-    const uint32_t output_width = atoi(output_dims.c_str());
-    const uint32_t output_height = atoi(output_dims.substr(output_dims.find('x') + 1).c_str());
-
-    BLImage img(output_width, output_height, BL_FORMAT_PRGB32);
-    BLContext ctx(img);
+void PendulumRender::drawLeftPanel(BLImage* img) {
+    BLContext ctx(*img);
 
     // https://blend2d.com/doc/getting-started.html
     // if blend2d doesn't work out...
@@ -57,20 +48,45 @@ bool PendulumRender::exec(vector<string> vargs) {
     ctx.setCompOp(BL_COMP_OP_SRC_COPY);
     ctx.fillAll();
 
+    ctx.setCompOp(BL_COMP_OP_SRC_OVER);
+
+    double cx = 180, cy = 180, r = 30;
+
+    ctx.setStrokeWidth(10);
+    ctx.setStrokeStartCap(BL_STROKE_CAP_ROUND);
+    ctx.setStrokeEndCap(BL_STROKE_CAP_BUTT);
+    ctx.setStrokeStyle(BLRgba32(0xff7f7f7f));
+
     BLPath path;
-    path.moveTo(26, 31);
-    path.cubicTo(642, 132, 587, -136, 25, 464);
-    path.cubicTo(882, 404, 144, 267, 27, 31);
+    path.moveTo(img->width() / 2, img->height() / 2);
+    path.lineTo(cx, cy);
+    ctx.strokePath(path);
+
+    BLGradient radial(BLRadialGradientValues(cx + r/3, cy + r/3, cx + r/3, cy + r/3, r * 1.75));
+    radial.addStop(0.0, BLRgba32(0xff5cabff));
+    radial.addStop(1.0, BLRgba32(0xff000000));
+    ctx.setFillStyle(radial);
+    ctx.fillCircle(cx, cy, r);
+    ctx.setFillStyle(BLRgba32(0xFFFFFFFF));
+
+    ctx.end();
+}
+
+void PendulumRender::drawRightPanel(BLImage* img) {
+    BLContext ctx(*img);
+    ctx.setCompOp(BL_COMP_OP_SRC_COPY);
+
+    ctx.setFillStyle(BLRgba32(0));
+    ctx.fillAll();
 
     ctx.setCompOp(BL_COMP_OP_SRC_OVER);
-    ctx.setFillStyle(BLRgba32(0xFFFFFFFF));
-    ctx.fillPath(path);
 
+    ctx.setFillStyle(BLRgba32(0xffffffff));
     BLFontFace face;
     BLResult err = face.createFromFile("extras/NotoSans-Regular.ttf");
     if (err) {
         fmt::print("Failed to load a font-face: {}\n", err);
-        return false;
+        return;
     }
 
     BLFont font;
@@ -99,19 +115,48 @@ bool PendulumRender::exec(vector<string> vargs) {
     }
 
     ctx.end();
+}
 
-    BLImageData imgdata;
-    img.getData(&imgdata);
-    const u8vec4* srcpixels = (const u8vec4*) imgdata.pixelData;
+bool PendulumRender::exec(vector<string> vargs) {
+    if (vargs.size() != 5) {
+        fmt::print("The command takes 5 arguments.\n");
+        return false;
+    }
+    const string dims = vargs[0];
+    const float friction = atof(vargs[1].c_str());
+    const float scalex = atof(vargs[2].c_str());
+    const float scaley = atof(vargs[3].c_str());
+    const string output_file = vargs[4];
+    const uint32_t output_width = atoi(dims.c_str());
+    const uint32_t output_height = atoi(dims.substr(dims.find('x') + 1).c_str());
 
-    vector<vec3> dstimg(output_width * output_height);
+    BLImage limg(output_width, output_height, BL_FORMAT_PRGB32);
+    drawLeftPanel(&limg);
+
+    BLImage rimg(output_width, output_height, BL_FORMAT_PRGB32);
+    drawRightPanel(&rimg);
+
+    BLImageData limgdata;
+    limg.getData(&limgdata);
+
+    BLImageData rimgdata;
+    rimg.getData(&rimgdata);
+
+    const u8vec4* lsrcpixels = (const u8vec4*) limgdata.pixelData;
+    const u8vec4* rsrcpixels = (const u8vec4*) rimgdata.pixelData;
+
+    vector<vec4> dstimg(output_width * 2 * output_height);
     for (uint32_t row = 0; row < output_height; ++row) {
         for (uint32_t col = 0; col < output_width; ++col) {
-            u8vec3 src = u8vec3(srcpixels[row * output_width + col]);
-            dstimg[row * output_width + col] = vec3(src) / 255.0f;
+            u8vec4 src = u8vec4(lsrcpixels[row * output_width + col]);
+            dstimg[row * output_width * 2 + col] = vec4(src) / 255.0f;
+        }
+        for (uint32_t col = 0; col < output_width; ++col) {
+            u8vec4 src = u8vec4(rsrcpixels[row * output_width + col]);
+            dstimg[row * output_width * 2 + col + output_width] = vec4(src) / 255.0f;
         }
     }
-    cnpy::npy_save(output_file, &dstimg.data()->x, {output_height, output_width, 3}, "w");
+    cnpy::npy_save(output_file, &dstimg.data()->x, {output_height, output_width * 2, 4}, "w");
     return true;
 }
 

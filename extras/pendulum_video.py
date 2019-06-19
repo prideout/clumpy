@@ -22,13 +22,12 @@ res = 512, 512
 dim = 'x'.join(map(str,res))
 
 friction = 0.1
-clumpy(f'pendulum_phase {dim} {friction} 1 5 field.npy')
-clumpy(f'pendulum_render field.npy {dim} render.npy')
-
+clumpy(f'pendulum_render {dim} {friction} 1 5 render.npy')
 im = snowy.reshape(np.load("render.npy"))
 snowy.export(im, "render.png")
 
 if False:
+    clumpy(f'pendulum_phase {dim} {friction} 1 5 field.npy')
     clumpy(f'bridson_points {dim} {spacing} 0 pts.npy')
     clumpy('advect_points pts.npy field.npy ' +
         f'{step_size} {kernel_size} {decay} {nframes} field1.npy')

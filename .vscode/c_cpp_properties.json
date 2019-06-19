@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                ".",
+                "commands",
+                "extern",
+                "extern/fmt/include",
+                "extern/glm",
+                "extern/blend2d/src"
+            ],
+            "defines": ["FILAMENT_HAS_EMBREE"],
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "/usr/bin/clang"
+        }
+    ],
+    "version": 4
+}
