@@ -22,7 +22,7 @@ res = 1024, 1024
 dim = 'x'.join(map(str,res))
 
 friction = 0.1
-clumpy(f'pendulum_render {dim} {friction} 1 5 render.npy')
+clumpy(f'pendulum_render {dim} {friction} 20 20 render.npy')
 im = snowy.reshape(np.load("render.npy"))
 snowy.export(im, "render.png")
 

@@ -8,6 +8,7 @@
 #include <blend2d.h>
 
 #include <limits>
+#include <random>
 
 using namespace glm;
 
@@ -33,6 +34,9 @@ struct PendulumRender : ClumpyCommand {
     }
     void drawLeftPanel(BLImage* dst);
     void drawRightPanel(BLImage* dst);
+    float friction;
+    float scalex;
+    float scaley;
 };
 
 static ClumpyCommand::Register registrar("pendulum_render", [] {
@@ -71,45 +75,6 @@ void PendulumRender::drawLeftPanel(BLImage* img) {
     ctx.fillCircle(cx, cy, r);
     ctx.setFillStyle(BLRgba32(0xFFFFFFFF));
 
-    ctx.end();
-}
-
-void PendulumRender::drawRightPanel(BLImage* img) {
-    BLPath ptcloud;
-    vector<float> points2d;
-    generate_pts(img->width(), img->height(), 20, 4421, points2d);
-    const double D = 0.1;
-    for (size_t i = 0; i < points2d.size(); i += 2) {
-        ptcloud.moveTo(points2d[i] - D, points2d[i + 1] - D);
-        ptcloud.lineTo(points2d[i] + D, points2d[i + 1] + D);
-    }
-
-    BLPath axis;
-    axis.moveTo(0, img->height() / 2);
-    axis.lineTo(img->width(), img->height() / 2);
-    axis.moveTo(img->width() / 2, 0);
-    axis.lineTo(img->width() / 2, img->height());
-
-    BLContext ctx(*img);
-
-    // Background
-    ctx.setCompOp(BL_COMP_OP_SRC_COPY);
-    ctx.setFillStyle(BLRgba32(0xffffffff));
-    ctx.fillAll();
-    ctx.setCompOp(BL_COMP_OP_SRC_OVER);
-
-    // Point Cloud
-    ctx.setStrokeStyle(BLRgba32(0x80202020));
-    ctx.setStrokeWidth(7);
-    ctx.setStrokeStartCap(BL_STROKE_CAP_ROUND);
-    ctx.setStrokeEndCap(BL_STROKE_CAP_ROUND);
-    ctx.strokePath(ptcloud);
-
-    // Axis Lines
-    ctx.setStrokeStyle(BLRgba32(0xf0000000));
-    ctx.setStrokeWidth(2);
-    ctx.strokePath(axis);
-
     BLFontFace face;
     BLResult err = face.createFromFile("extras/NotoSans-Regular.ttf");
     if (err) {
@@ -130,15 +95,129 @@ void PendulumRender::drawRightPanel(BLImage* img) {
     ctx.end();
 }
 
+void PendulumRender::drawRightPanel(BLImage* img) {
+    const int nframes = 200;
+    const float mindist = 20;
+    const float step_size = 2.5;
+    const float decay = 0.99;
+    const float width = img->width();
+    const float height = img->height();
+    const float g = 1, L = 1;
+
+    auto getFieldVector = [=](vec2 v) {
+        const float x = scalex * (v.x / width - 0.5);
+        const float y = scaley * (v.y / height - 0.5);
+        const float theta = x;
+        const float omega = y;
+        const float omega_dot = -friction * omega - g / L * sin(theta);
+        return vec2(omega, omega_dot);
+    };
+
+    auto show_progress = [](uint32_t i, uint32_t count) {
+        int progress = 100 * i / (count - 1);
+        fmt::print("[");
+        for (int c = 0; c < 100; ++c) putc(c < progress ? '=' : '-', stdout);
+        fmt::print("]\r");
+        fflush(stdout);
+    };
+
+    vector<float> points2d;
+    generate_pts(img->width(), img->height(), mindist, 4421, points2d);
+    const size_t npts = points2d.size() / 2;
+
+    vector<uint32_t> age_offset(npts);
+    {
+        std::mt19937 generator;
+        generator.seed(0);
+        std::uniform_int_distribution<> get_age_offset(0, nframes - 1);
+        for (uint32_t i = 0; i < npts; ++i) {
+            age_offset[i] = get_age_offset(generator);
+        }
+    }
+
+    vector<float> particle_age(npts);
+    vector<vec2> advected_points(npts);
+    for (uint32_t i = 0; i < npts; ++i) {
+        advected_points[i].x = points2d[i * 2];
+        advected_points[i].y = points2d[i * 2 + 1];
+    }
+
+    uint32_t simframe = 0;
+
+    // Initial advection. (Does not get recorded.)
+    for (; simframe < nframes; ++simframe) {
+        for (uint32_t i = 0; i < npts; ++i) {
+            vec2& pt = advected_points[i];
+            pt += step_size * getFieldVector(pt);
+            particle_age[i]++;
+            if (simframe >= age_offset[i]) {
+                pt.x = points2d[i * 2];
+                pt.y = points2d[i * 2 + 1];
+                particle_age[i] = 0;
+                age_offset[i] = nframes;
+            }
+        }
+    }
+
+    BLPath axis;
+    axis.moveTo(0, img->height() / 2);
+    axis.lineTo(img->width(), img->height() / 2);
+    axis.moveTo(img->width() / 2, 0);
+    axis.lineTo(img->width() / 2, img->height());
+
+    BLContext ctx(*img);
+
+    // Background
+    ctx.setCompOp(BL_COMP_OP_SRC_COPY);
+    ctx.setFillStyle(BLRgba32(0xffffffff));
+    ctx.fillAll();
+    ctx.setCompOp(BL_COMP_OP_SRC_OVER);
+
+    // Axis Lines
+    ctx.setStrokeStyle(BLRgba32(0xff000000));
+    ctx.setStrokeWidth(3);
+    ctx.strokePath(axis);
+    ctx.setStrokeStartCap(BL_STROKE_CAP_ROUND);
+    ctx.setStrokeEndCap(BL_STROKE_CAP_ROUND);
+
+    // Stream Lines
+    ctx.setStrokeStyle(BLRgba32(0x40000000));
+    ctx.setStrokeWidth(2);
+
+    for (uint32_t i = 0; i < npts; ++i) {
+        show_progress(i, npts);
+        BLPath streamlines;
+
+        vec2& pt = advected_points[i];
+        streamlines.moveTo(pt.x, pt.y);
+
+        for (simframe = nframes; simframe < nframes * 2; ++simframe) {
+            pt += step_size * getFieldVector(pt);
+            streamlines.lineTo(pt.x, pt.y);
+            particle_age[i]++;
+            if (particle_age[i] >= nframes) {
+                pt.x = points2d[i * 2];
+                pt.y = points2d[i * 2 + 1];
+                particle_age[i] = 0;
+                streamlines.moveTo(pt.x, pt.y);
+            }
+        }
+        ctx.strokePath(streamlines);
+    }
+    puts("");
+
+    ctx.end();
+}
+
 bool PendulumRender::exec(vector<string> vargs) {
     if (vargs.size() != 5) {
         fmt::print("The command takes 5 arguments.\n");
         return false;
     }
     const string dims = vargs[0];
-    const float friction = atof(vargs[1].c_str());
-    const float scalex = atof(vargs[2].c_str());
-    const float scaley = atof(vargs[3].c_str());
+    friction = atof(vargs[1].c_str());
+    scalex = atof(vargs[2].c_str());
+    scaley = atof(vargs[3].c_str());
     const string output_file = vargs[4];
     const uint32_t output_width = atoi(dims.c_str());
     const uint32_t output_height = atoi(dims.substr(dims.find('x') + 1).c_str());
