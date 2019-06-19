@@ -18,7 +18,7 @@ skip = 1
 kernel_size = 7
 decay = 0.99
 nframes = 240
-res = 512, 512
+res = 1024, 1024
 dim = 'x'.join(map(str,res))
 
 friction = 0.1

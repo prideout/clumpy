@@ -15,6 +15,8 @@ using std::vector;
 using std::string;
 using std::numeric_limits;
 
+void generate_pts(float width, float height, float radius, int seed, vector<float>& result);
+
 namespace {
 
 struct PendulumRender : ClumpyCommand {
@@ -73,15 +75,41 @@ void PendulumRender::drawLeftPanel(BLImage* img) {
 }
 
 void PendulumRender::drawRightPanel(BLImage* img) {
+    BLPath ptcloud;
+    vector<float> points2d;
+    generate_pts(img->width(), img->height(), 20, 4421, points2d);
+    const double D = 0.1;
+    for (size_t i = 0; i < points2d.size(); i += 2) {
+        ptcloud.moveTo(points2d[i] - D, points2d[i + 1] - D);
+        ptcloud.lineTo(points2d[i] + D, points2d[i + 1] + D);
+    }
+
+    BLPath axis;
+    axis.moveTo(0, img->height() / 2);
+    axis.lineTo(img->width(), img->height() / 2);
+    axis.moveTo(img->width() / 2, 0);
+    axis.lineTo(img->width() / 2, img->height());
+
     BLContext ctx(*img);
+
+    // Background
     ctx.setCompOp(BL_COMP_OP_SRC_COPY);
-
-    ctx.setFillStyle(BLRgba32(0));
+    ctx.setFillStyle(BLRgba32(0xffffffff));
     ctx.fillAll();
-
     ctx.setCompOp(BL_COMP_OP_SRC_OVER);
 
-    ctx.setFillStyle(BLRgba32(0xffffffff));
+    // Point Cloud
+    ctx.setStrokeStyle(BLRgba32(0x80202020));
+    ctx.setStrokeWidth(7);
+    ctx.setStrokeStartCap(BL_STROKE_CAP_ROUND);
+    ctx.setStrokeEndCap(BL_STROKE_CAP_ROUND);
+    ctx.strokePath(ptcloud);
+
+    // Axis Lines
+    ctx.setStrokeStyle(BLRgba32(0xf0000000));
+    ctx.setStrokeWidth(2);
+    ctx.strokePath(axis);
+
     BLFontFace face;
     BLResult err = face.createFromFile("extras/NotoSans-Regular.ttf");
     if (err) {
@@ -90,29 +118,14 @@ void PendulumRender::drawRightPanel(BLImage* img) {
     }
 
     BLFont font;
-    font.createFromFace(face, 20.0f);
+    font.createFromFace(face, 40.0f);
 
-    BLFontMetrics fm = font.metrics();
-    BLTextMetrics tm;
-    BLGlyphBuffer gb;
+    ctx.setFillStyle(BLRgba32(0xffffffff));
+    ctx.fillUtf8Text(BLPoint(60, 80), font, "θ'' = -μθ' - g / L * sin(θ)");
 
-    BLPoint p(20, 190 + fm.ascent);
-    const char* text = "Hello Blend2D!\n"
-                        "I'm a simple multiline text example\n"
-                        "that uses BLGlyphBuffer and fillGlyphRun!";
-    for (;;) {
-        const char* end = strchr(text, '\n');
-        gb.setUtf8Text(text, end ? (size_t)(end - text) : SIZE_MAX);
-        font.shape(gb);
-        font.getTextMetrics(gb, tm);
-
-        p.x = (480.0 - (tm.boundingBox.x1 - tm.boundingBox.x0)) / 2.0;
-        ctx.fillGlyphRun(p, font, gb.glyphRun());
-        p.y += fm.ascent + fm.descent + fm.lineGap;
-
-        if (!end) break;
-        text = end + 1;
-    }
+    ctx.setStrokeStyle(BLRgba32(0xf0000000));
+    ctx.setStrokeWidth(2);
+    ctx.strokeUtf8Text(BLPoint(60, 80), font, "θ'' = -μθ' - g / L * sin(θ)");
 
     ctx.end();
 }

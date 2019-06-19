@@ -13,9 +13,9 @@ using std::vector;
 using std::string;
 using std::numeric_limits;
 
-namespace {
-
 void generate_pts(float width, float height, float radius, int seed, vector<float>& result);
+
+namespace {
 
 struct BridsonPoints : ClumpyCommand {
     BridsonPoints() {}
@@ -84,6 +84,8 @@ vec2 sample_annulus(float radius, vec2 center, int* seedptr) {
     *seedptr = seed;
     return r * radius + center;
 }
+
+} // anonymous namespace
 
 #define GRIDF(vec) \
     grid[(int) (vec.x * invcell) + ncols * (int) (vec.y * invcell)]
@@ -183,5 +185,3 @@ void generate_pts(float width, float height, float radius, int seed, vector<floa
 
 #undef GRIDF
 #undef GRIDI
-
-} // anonymous namespace
