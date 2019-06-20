@@ -17,18 +17,27 @@ step_size = 2.5
 skip = 1
 kernel_size = 7
 decay = 0.99
-nframes = 240
+nframes = 200
 res = 1024, 1024
 dim = 'x'.join(map(str,res))
-
 friction = 0.1
-clumpy(f'pendulum_render {dim} {friction} 20 5 render.npy')
-im = snowy.reshape(np.load("render.npy"))
-snowy.export(im, "render.png")
 
 # https://developer.twitter.com/en/docs/media/upload-media/uploading-media/media-best-practices.html
 # < 512 MB,1280x720, bitrate=2048K
 # H264 High Profile
+
+if True:
+    clumpy(f'pendulum_render {dim} {friction} {nframes} 20 5 render.npy')
+
+    import imageio
+    writer = imageio.get_writer('anim.mp4', fps=60)
+    for i in tqdm(range(0, 200, skip)):
+        im = np.load("{:03}render.npy".format(i))
+        im = np.uint8(snowy.resize(im, 512, 256))
+        writer.append_data(im)
+
+    writer.close()
+    print('Generated anim.mp4')
 
 if False:
     clumpy(f'pendulum_phase {dim} {friction} 1 5 field.npy')

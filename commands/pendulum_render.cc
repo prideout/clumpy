@@ -32,19 +32,28 @@ struct PendulumRender : ClumpyCommand {
     string example() const override {
         return "500x500 0.01 1.0 5.0 field.npy";
     }
-    void drawLeftPanel(BLImage* dst);
-    void drawRightPanel(BLImage* dst);
+    void drawLeftPanel(BLContext& ctx, BLImage* dst, uint32_t frame);
+    void drawRightPanel(BLContext& ctx, BLImage* dst, uint32_t frame);
     float friction;
     float scalex;
     float scaley;
+    int nframes = 200;
+    BLFontFace face;
+    BLFont font;
+    BLPath streamlines;
+    const float mindist = 15;
+    const float step_size = 2.5;
+    const float decay = 0.99;
+    const float g = 1, L = 1;
+    const float maxLength = 100;
 };
 
 static ClumpyCommand::Register registrar("pendulum_render", [] {
     return new PendulumRender();
 });
 
-void PendulumRender::drawLeftPanel(BLImage* img) {
-    BLContext ctx(*img);
+void PendulumRender::drawLeftPanel(BLContext& ctx, BLImage* img, uint32_t frame) {
+    ctx.begin(*img);
 
     // https://blend2d.com/doc/getting-started.html
     // if blend2d doesn't work out...
@@ -75,16 +84,6 @@ void PendulumRender::drawLeftPanel(BLImage* img) {
     ctx.fillCircle(cx, cy, r);
     ctx.setFillStyle(BLRgba32(0xFFFFFFFF));
 
-    BLFontFace face;
-    BLResult err = face.createFromFile("extras/NotoSans-Regular.ttf");
-    if (err) {
-        fmt::print("Failed to load a font-face: {}\n", err);
-        return;
-    }
-
-    BLFont font;
-    font.createFromFace(face, 40.0f);
-
     ctx.setFillStyle(BLRgba32(0xffffffff));
     ctx.fillUtf8Text(BLPoint(60, 80), font, "θ'' = -μθ' - g / L * sin(θ)");
 
@@ -95,15 +94,12 @@ void PendulumRender::drawLeftPanel(BLImage* img) {
     ctx.end();
 }
 
-void PendulumRender::drawRightPanel(BLImage* img) {
-    const int nframes = 200;
-    const float mindist = 15;
-    const float step_size = 2.5;
-    const float decay = 0.99;
+void PendulumRender::drawRightPanel(BLContext& ctx, BLImage* img, uint32_t frame) {
+
+    ctx.begin(*img);
+
     const float width = img->width();
     const float height = img->height();
-    const float g = 1, L = 1;
-    const float maxLength = 100;
     const float paddingx = img->width() / 10;
     const float paddingy = img->height() / 10;
 
@@ -114,14 +110,6 @@ void PendulumRender::drawRightPanel(BLImage* img) {
         const float omega = y;
         const float omega_dot = -friction * omega - g / L * sin(theta);
         return vec2(omega, omega_dot);
-    };
-
-    auto show_progress = [](uint32_t i, uint32_t count) {
-        int progress = 100 * i / (count - 1);
-        fmt::print("[");
-        for (int c = 0; c < 100; ++c) putc(c < progress ? '=' : '-', stdout);
-        fmt::print("]\r");
-        fflush(stdout);
     };
 
     vector<float> points2d;
@@ -170,8 +158,6 @@ void PendulumRender::drawRightPanel(BLImage* img) {
     axis.moveTo(img->width() / 2, 0);
     axis.lineTo(img->width() / 2, img->height());
 
-    BLContext ctx(*img);
-
     // Background
     ctx.setCompOp(BL_COMP_OP_SRC_COPY);
     ctx.setFillStyle(BLRgba32(0xffffffff));
@@ -190,8 +176,7 @@ void PendulumRender::drawRightPanel(BLImage* img) {
     ctx.setStrokeWidth(2);
 
     for (uint32_t i = 0; i < npts; ++i) {
-        show_progress(i, npts);
-        BLPath streamlines;
+        streamlines.clear();
 
         vec2& pt = advected_points[i];
         streamlines.moveTo(pt.x, pt.y);
@@ -215,12 +200,6 @@ void PendulumRender::drawRightPanel(BLImage* img) {
         }
         ctx.strokePath(streamlines);
     }
-    puts("");
-
-    BLFontFace face;
-    face.createFromFile("extras/NotoSans-Regular.ttf");
-    BLFont font;
-    font.createFromFace(face, 40.0f);
 
     ctx.setFillStyle(BLRgba32(0xf0000000));
     ctx.setStrokeStyle(BLRgba32(0xf0000000));
@@ -236,45 +215,75 @@ void PendulumRender::drawRightPanel(BLImage* img) {
 }
 
 bool PendulumRender::exec(vector<string> vargs) {
-    if (vargs.size() != 5) {
-        fmt::print("The command takes 5 arguments.\n");
+    if (vargs.size() != 6) {
+        fmt::print("The command takes 6 arguments.\n");
         return false;
     }
     const string dims = vargs[0];
     friction = atof(vargs[1].c_str());
-    scalex = atof(vargs[2].c_str());
-    scaley = atof(vargs[3].c_str());
-    const string output_file = vargs[4];
+    nframes = atof(vargs[2].c_str());
+    scalex = atof(vargs[3].c_str());
+    scaley = atof(vargs[4].c_str());
+    const string output_file = vargs[5];
     const uint32_t output_width = atoi(dims.c_str());
     const uint32_t output_height = atoi(dims.substr(dims.find('x') + 1).c_str());
 
     BLImage limg(output_width, output_height, BL_FORMAT_PRGB32);
-    drawLeftPanel(&limg);
-
     BLImage rimg(output_width, output_height, BL_FORMAT_PRGB32);
-    drawRightPanel(&rimg);
-
     BLImageData limgdata;
-    limg.getData(&limgdata);
-
     BLImageData rimgdata;
-    rimg.getData(&rimgdata);
-
-    const u8vec4* lsrcpixels = (const u8vec4*) limgdata.pixelData;
-    const u8vec4* rsrcpixels = (const u8vec4*) rimgdata.pixelData;
 
     vector<vec4> dstimg(output_width * 2 * output_height);
-    for (uint32_t row = 0; row < output_height; ++row) {
-        for (uint32_t col = 0; col < output_width; ++col) {
-            u8vec4 src = u8vec4(lsrcpixels[row * output_width + col]);
-            dstimg[row * output_width * 2 + col] = vec4(src) / 255.0f;
-        }
-        for (uint32_t col = 0; col < output_width; ++col) {
-            u8vec4 src = u8vec4(rsrcpixels[row * output_width + col]);
-            dstimg[row * output_width * 2 + col + output_width] = vec4(src) / 255.0f;
-        }
+
+    auto show_progress = [](uint32_t i, uint32_t count) {
+        int progress = 100 * i / (count - 1);
+        fmt::print("[");
+        for (int c = 0; c < 100; ++c) putc(c < progress ? '=' : '-', stdout);
+        fmt::print("]\r");
+        fflush(stdout);
+    };
+
+    BLResult err = face.createFromFile("extras/NotoSans-Regular.ttf");
+    if (err) {
+        fmt::print("Failed to load a font-face: {}\n", err);
+        return false;
     }
-    cnpy::npy_save(output_file, &dstimg.data()->x, {output_height, output_width * 2, 4}, "w");
+
+    font.createFromFace(face, 40.0f);
+
+    BLContext lctx(limg);
+    BLContext rctx(rimg);
+
+    for (uint32_t frame = 0; frame < nframes; ++frame) {
+
+        show_progress(frame, nframes);
+
+        drawLeftPanel(lctx, &limg, frame);
+        drawRightPanel(rctx, &rimg, frame);
+
+        limg.getData(&limgdata);
+        rimg.getData(&rimgdata);
+
+        const u8vec4* lsrcpixels = (const u8vec4*) limgdata.pixelData;
+        const u8vec4* rsrcpixels = (const u8vec4*) rimgdata.pixelData;
+
+        for (uint32_t row = 0; row < output_height; ++row) {
+            for (uint32_t col = 0; col < output_width; ++col) {
+                u8vec4 src = u8vec4(lsrcpixels[row * output_width + col]);
+                dstimg[row * output_width * 2 + col] = vec4(src);
+            }
+            for (uint32_t col = 0; col < output_width; ++col) {
+                u8vec4 src = u8vec4(rsrcpixels[row * output_width + col]);
+                dstimg[row * output_width * 2 + col + output_width] = vec4(src);
+            }
+        }
+
+        const string filename = fmt::format("{:03}{}", frame, output_file);
+        cnpy::npy_save(filename, &dstimg.data()->x, {output_height, output_width * 2, 4}, "w");
+    }
+
+    puts("");
+
     return true;
 }
 
