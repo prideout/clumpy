@@ -33,8 +33,7 @@ if True:
     writer = imageio.get_writer('anim.mp4', fps=60)
     for i in tqdm(range(0, 200, skip)):
         im = np.load("{:03}render.npy".format(i))
-        im = np.uint8(snowy.resize(im, 512, 256))
-        writer.append_data(im)
+        writer.append_data(np.uint8(im))
 
     writer.close()
     print('Generated anim.mp4')

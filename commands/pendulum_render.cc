@@ -45,7 +45,7 @@ struct PendulumRender : ClumpyCommand {
     const float step_size = 2.5;
     const float decay = 0.99;
     const float g = 1, L = 1;
-    const float maxLength = 100;
+    const float maxLength = 50;
 };
 
 static ClumpyCommand::Register registrar("pendulum_render", [] {
@@ -128,28 +128,10 @@ void PendulumRender::drawRightPanel(BLContext& ctx, BLImage* img, uint32_t frame
         }
     }
 
-    vector<float> particle_age(npts);
     vector<vec2> advected_points(npts);
     for (uint32_t i = 0; i < npts; ++i) {
         advected_points[i].x = points2d[i * 2];
         advected_points[i].y = points2d[i * 2 + 1];
-    }
-
-    uint32_t simframe = 0;
-
-    // Initial advection. (Does not get recorded.)
-    for (; simframe < nframes; ++simframe) {
-        for (uint32_t i = 0; i < npts; ++i) {
-            vec2& pt = advected_points[i];
-            pt += step_size * getFieldVector(pt);
-            particle_age[i]++;
-            if (simframe >= age_offset[i]) {
-                pt.x = points2d[i * 2];
-                pt.y = points2d[i * 2 + 1];
-                particle_age[i] = 0;
-                age_offset[i] = nframes;
-            }
-        }
     }
 
     BLPath axis;
@@ -175,28 +157,44 @@ void PendulumRender::drawRightPanel(BLContext& ctx, BLImage* img, uint32_t frame
     ctx.setStrokeStyle(BLRgba32(0x40000000));
     ctx.setStrokeWidth(2);
 
-    for (uint32_t i = 0; i < npts; ++i) {
-        streamlines.clear();
-
-        vec2& pt = advected_points[i];
-        streamlines.moveTo(pt.x, pt.y);
-        float length = 0;
-
-        for (simframe = nframes; simframe < nframes * 2; ++simframe) {
-            vec2 del = step_size * getFieldVector(pt);
-            length += del.length();
-            if (length >= maxLength) {
+    // Initial advection. (Does not get recorded.)
+    for (uint32_t pathIndex = 0; pathIndex < nframes; ++pathIndex) {
+        for (uint32_t i = 0; i < npts; ++i) {
+            vec2& pt = advected_points[i];
+            pt += step_size * getFieldVector(pt);
+            if (pathIndex >= age_offset[i]) {
                 break;
             }
-            pt += del;
-            streamlines.lineTo(pt.x, pt.y);
-            particle_age[i]++;
-            if (particle_age[i] >= nframes) {
-                pt.x = points2d[i * 2];
-                pt.y = points2d[i * 2 + 1];
-                particle_age[i] = 0;
-                streamlines.moveTo(pt.x, pt.y);
+        }
+    }
+
+    vector<vec2> pts;
+    pts.reserve(nframes);
+
+    for (uint32_t i = 0; i < npts; ++i) {
+
+        pts.clear();
+        vec2 pt = advected_points[i];
+        for (uint32_t pathIndex = 0; pathIndex < nframes; ++pathIndex) {
+            pt += step_size * getFieldVector(pt);
+            pts.push_back(pt);
+        }
+
+        streamlines.clear();
+        uint32_t prevIndex = nframes;
+        bool startSegment = false;
+        for (uint32_t segmentIndex = 0; segmentIndex < maxLength; ++segmentIndex) {
+            uint32_t pathIndex = (age_offset[i] + segmentIndex + frame) % nframes;
+            if (pathIndex < prevIndex) {
+                startSegment = true;
+            } else {
+                if (startSegment) {
+                    streamlines.moveTo(pts[prevIndex].x, pts[prevIndex].y);
+                    startSegment = false;
+                }
+                streamlines.lineTo(pts[pathIndex].x, pts[pathIndex].y);
             }
+            prevIndex = pathIndex;
         }
         ctx.strokePath(streamlines);
     }
