@@ -155,7 +155,7 @@ void PendulumRender::drawRightPanel(BLContext& ctx, BLImage* img, uint32_t frame
 
     // Stream Lines
     ctx.setStrokeStyle(BLRgba32(0x40000000));
-    ctx.setStrokeWidth(4);
+    ctx.setStrokeWidth(3);
 
     // Initial advection. (Does not get recorded.)
     for (uint32_t pathIndex = 0; pathIndex < nframes; ++pathIndex) {
@@ -231,7 +231,7 @@ bool PendulumRender::exec(vector<string> vargs) {
     BLImageData limgdata;
     BLImageData rimgdata;
 
-    vector<vec4> dstimg(output_width * output_height);
+    vector<vec4> dstimg(output_width * 2 * output_height);
 
     auto show_progress = [](uint32_t i, uint32_t count) {
         int progress = 100 * i / (count - 1);
@@ -266,18 +266,18 @@ bool PendulumRender::exec(vector<string> vargs) {
         const u8vec4* rsrcpixels = (const u8vec4*) rimgdata.pixelData;
 
         for (uint32_t row = 0; row < output_height; ++row) {
-            // for (uint32_t col = 0; col < output_width; ++col) {
-            //     u8vec4 src = u8vec4(lsrcpixels[row * output_width + col]);
-            //     dstimg[row * output_width * 2 + col] = vec4(src);
-            // }
+            for (uint32_t col = 0; col < output_width; ++col) {
+                u8vec4 src = u8vec4(lsrcpixels[row * output_width + col]);
+                dstimg[row * output_width * 2 + col] = vec4(src);
+            }
             for (uint32_t col = 0; col < output_width; ++col) {
                 u8vec4 src = u8vec4(rsrcpixels[row * output_width + col]);
-                dstimg[row * output_width + col] = vec4(src);
+                dstimg[row * output_width * 2 + output_width + col] = vec4(src);
             }
         }
 
         const string filename = fmt::format("{:03}{}", frame, output_file);
-        cnpy::npy_save(filename, &dstimg.data()->x, {output_height, output_width, 4}, "w");
+        cnpy::npy_save(filename, &dstimg.data()->x, {output_height, output_width * 2, 4}, "w");
     }
 
     puts("");

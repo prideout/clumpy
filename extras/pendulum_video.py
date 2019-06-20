@@ -14,11 +14,11 @@ def clumpy(cmd):
 
 spacing = 25
 step_size = 2.5
-skip = 2
+skip = 1
 kernel_size = 7
 decay = 0.99
 nframes = 150
-res = 2048, 1024
+res = 1024, 1024
 dim = 'x'.join(map(str,res))
 friction = 0.8
 
