@@ -30,7 +30,7 @@ if True:
     clumpy(f'pendulum_render {dim} {friction} {nframes} 20 5 render.npy')
 
     import imageio
-    writer = imageio.get_writer('anim.mp4', fps=60)
+    writer = imageio.get_writer('anim.mp4', fps=60, quality=9)
     for i in tqdm(range(0, nframes, skip)):
         im = np.load("{:03}render.npy".format(i))
         writer.append_data(np.uint8(im))
@@ -51,7 +51,7 @@ if False:
         f'{step_size} {kernel_size} {decay} {nframes} field2.npy')
 
     import imageio
-    writer = imageio.get_writer('anim.mp4', fps=60)
+    writer = imageio.get_writer('anim.mp4', fps=60, quality=9)
     for i in tqdm(range(0, nframes, skip)):
 
         im1 = snowy.reshape(np.load("{:03}field1.npy".format(i)))

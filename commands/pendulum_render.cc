@@ -150,8 +150,8 @@ void PendulumRender::drawRightPanel(BLContext& ctx, BLImage* img, uint32_t frame
     ctx.setStrokeStyle(BLRgba32(0xff000000));
     ctx.setStrokeWidth(5);
     ctx.strokePath(axis);
-    ctx.setStrokeStartCap(BL_STROKE_CAP_ROUND);
-    ctx.setStrokeEndCap(BL_STROKE_CAP_ROUND);
+    ctx.setStrokeStartCap(BL_STROKE_CAP_BUTT);
+    ctx.setStrokeEndCap(BL_STROKE_CAP_BUTT);
 
     // Stream Lines
     ctx.setStrokeStyle(BLRgba32(0x40000000));
@@ -180,23 +180,26 @@ void PendulumRender::drawRightPanel(BLContext& ctx, BLImage* img, uint32_t frame
             pts.push_back(pt);
         }
 
-        streamlines.clear();
         uint32_t prevIndex = nframes;
         bool startSegment = false;
         for (uint32_t segmentIndex = 0; segmentIndex < maxLength; ++segmentIndex) {
             uint32_t pathIndex = (age_offset[i] + segmentIndex + frame) % nframes;
-            if (pathIndex < prevIndex) {
-                startSegment = true;
-            } else {
-                if (startSegment) {
-                    streamlines.moveTo(pts[prevIndex].x, pts[prevIndex].y);
-                    startSegment = false;
-                }
-                streamlines.lineTo(pts[pathIndex].x, pts[pathIndex].y);
-            }
+            if (pathIndex >= prevIndex) {
+
+                float x0 = pts[prevIndex].x, y0 = pts[prevIndex].y;
+                float x1 = pts[pathIndex].x, y1 = pts[pathIndex].y;
+
+                float t = segmentIndex / float(maxLength);
+                float alpha = t * 0.25f;
+                ctx.setStrokeStyle(BLRgba32(uint32_t(std::min(255.0f, alpha * 255.0f)) << 24));
+
+                streamlines.clear();
+                streamlines.moveTo(x0, y0);
+                streamlines.lineTo(x1, y1);
+                ctx.strokePath(streamlines);
+             }
             prevIndex = pathIndex;
         }
-        ctx.strokePath(streamlines);
     }
 
     ctx.setFillStyle(BLRgba32(0xf0000000));
