@@ -12,15 +12,15 @@ def clumpy(cmd):
     result = system('.release/clumpy ' + cmd)
     if result: raise Exception("clumpy failed with: " + cmd)
 
-spacing = 20
+spacing = 25
 step_size = 2.5
-skip = 1
+skip = 2
 kernel_size = 7
 decay = 0.99
-nframes = 200
-res = 1024, 1024
+nframes = 150
+res = 2048, 1024
 dim = 'x'.join(map(str,res))
-friction = 0.1
+friction = 0.8
 
 # https://developer.twitter.com/en/docs/media/upload-media/uploading-media/media-best-practices.html
 # < 512 MB,1280x720, bitrate=2048K
@@ -31,7 +31,7 @@ if True:
 
     import imageio
     writer = imageio.get_writer('anim.mp4', fps=60)
-    for i in tqdm(range(0, 200, skip)):
+    for i in tqdm(range(0, nframes, skip)):
         im = np.load("{:03}render.npy".format(i))
         writer.append_data(np.uint8(im))
 
