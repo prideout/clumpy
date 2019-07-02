@@ -8,7 +8,7 @@ operations in C++ that are either slow or non-existent in [pillow](https://pytho
 
 Since it's just a command line tool, it doesn't contain any
 [FFI](https://en.wikipedia.org/wiki/Foreign_function_interface) messiness. Feel free to contribute
-by adding your own command, but keep it simple! Add a `cc` file and make a pull request.
+by adding your own command, but keep it simple! Add a `cc` file to the `commands` folder and make a pull request.
 
 This is just a toy library. For serious C++ applications you might want to look at
 [xtensor](https://github.com/QuantStack/xtensor) (which can read / write npy files) and
